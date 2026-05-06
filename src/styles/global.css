@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --ink: #222222;
+  --cream: #fffaf0;
+  --mint: #eef8f5;
+  --sky: #9bd7e5;
+  --yellow: #f6bd4f;
+  --pink: #f5a6b4;
+  --lavender: #c9b6ea;
+  font-family: "Nunito", "Trebuchet MS", sans-serif;
+  background: var(--cream);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(246, 189, 79, 0.34), transparent 20rem),
+    radial-gradient(circle at 88% 18%, rgba(155, 215, 229, 0.38), transparent 22rem),
+    radial-gradient(circle at 78% 82%, rgba(245, 166, 180, 0.28), transparent 20rem),
+    linear-gradient(180deg, #fffdf7 0%, #fff8ec 100%);
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+@layer components {
+  .saw-card {
+    border: 2px solid var(--ink);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 8px 8px 0 var(--ink);
+  }
+
+  .saw-card-soft {
+    border: 2px solid var(--ink);
+    border-radius: 18px;
+    background: var(--mint);
+    box-shadow: 8px 8px 0 var(--ink);
+  }
+
+  .saw-button {
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    box-shadow: 6px 6px 0 var(--ink);
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  }
+
+  .saw-button:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .saw-input {
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  .saw-dots {
+    background-image: radial-gradient(rgba(34, 34, 34, 0.18) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+}

@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import KuncianViewer from '../components/KuncianViewer.vue';
+---
+
+<BaseLayout title="Kuncian Viewer">
+  <main class="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
+    <KuncianViewer client:load />
+  </main>
+</BaseLayout>
