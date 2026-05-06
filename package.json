@@ -10,7 +10,7 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/node": "^9.0.0",
+    "@astrojs/netlify": "^6.6.5",
     "@astrojs/tailwind": "^6.0.2",
     "@astrojs/vue": "^5.0.0",
     "astro": "^5.0.0",
