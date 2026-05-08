@@ -30,6 +30,15 @@ body {
   color: var(--ink);
 }
 
+html.dark body {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(246, 189, 79, 0.1), transparent 20rem),
+    radial-gradient(circle at 88% 18%, rgba(155, 215, 229, 0.1), transparent 22rem),
+    radial-gradient(circle at 78% 82%, rgba(245, 166, 180, 0.1), transparent 20rem),
+    linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  color: #f8fafc;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -43,14 +52,14 @@ body {
   .saw-card {
     border: 2px solid var(--ink);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.92);
+    background-color: rgba(255, 255, 255, 0.92);
     box-shadow: 8px 8px 0 var(--ink);
   }
 
   .saw-card-soft {
     border: 2px solid var(--ink);
     border-radius: 18px;
-    background: var(--mint);
+    background-color: var(--mint);
     box-shadow: 8px 8px 0 var(--ink);
   }
 
@@ -69,7 +78,7 @@ body {
   .saw-input {
     border: 2px solid var(--ink);
     border-radius: 14px;
-    background: #ffffff;
+    background-color: #ffffff;
     box-shadow: 4px 4px 0 var(--ink);
   }
 

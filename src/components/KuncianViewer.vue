@@ -8,6 +8,13 @@ const selectedImage = ref(null);
 const loading = ref(true);
 const error = ref('');
 
+// --- New States ---
+const isDarkMode = ref(false);
+const favorites = ref([]);
+const zoomLevel = ref(1);
+const showScrollTop = ref(false);
+const copySuccess = ref(false);
+
 const encodePublicPathSegment = (segment) => {
   return encodeURI(segment)
     .replace(/#/g, '%23')
@@ -28,15 +35,21 @@ const filteredTopics = computed(() => {
     return [];
   }
 
-  if (!keyword) {
-    return library.value.topics;
+  let topics = library.value.topics;
+
+  if (keyword) {
+    topics = topics.filter((topic) => {
+      const topicMatch = topic.name.toLowerCase().includes(keyword);
+      const fileMatch = topic.files.some((file) => file.name.toLowerCase().includes(keyword));
+
+      return topicMatch || fileMatch;
+    });
   }
 
-  return library.value.topics.filter((topic) => {
-    const topicMatch = topic.name.toLowerCase().includes(keyword);
-    const fileMatch = topic.files.some((file) => file.name.toLowerCase().includes(keyword));
-
-    return topicMatch || fileMatch;
+  return topics.slice().sort((a, b) => {
+    const aFav = favorites.value.includes(a.name) ? 1 : 0;
+    const bFav = favorites.value.includes(b.name) ? 1 : 0;
+    return bFav - aFav;
   });
 });
 
@@ -100,10 +113,15 @@ function filterFiles(files) {
 function setActiveTopic(topicName) {
   activeTopicName.value = topicName;
   selectedImage.value = null;
+
+  const url = new URL(window.location);
+  url.searchParams.set('q', topicName);
+  window.history.pushState({}, '', url);
 }
 
 function selectImage(file) {
   selectedImage.value = file;
+  zoomLevel.value = 1;
 }
 
 function selectImageByIndex(index) {
@@ -115,6 +133,7 @@ function selectImageByIndex(index) {
 
   const normalizedIndex = (index + images.length) % images.length;
   selectedImage.value = images[normalizedIndex];
+  zoomLevel.value = 1;
 }
 
 function showPreviousImage() {
@@ -135,6 +154,7 @@ function showNextImage() {
 
 function closeImage() {
   selectedImage.value = null;
+  zoomLevel.value = 1;
 }
 
 function handleKeydown(event) {
@@ -170,7 +190,20 @@ async function loadLibrary() {
     }
 
     library.value = await response.json();
-    activeTopicName.value = library.value.topics[0]?.name || '';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const q = urlParams.get('q');
+
+    if (q && library.value.topics.some((t) => t.name === q)) {
+      activeTopicName.value = q;
+    } else {
+      activeTopicName.value = library.value.topics[0]?.name || '';
+      if (activeTopicName.value) {
+        const url = new URL(window.location);
+        url.searchParams.set('q', activeTopicName.value);
+        window.history.replaceState({}, '', url);
+      }
+    }
   } catch (loadError) {
     error.value = loadError.message;
   } finally {
@@ -178,42 +211,167 @@ async function loadLibrary() {
   }
 }
 
+function handlePopState() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const q = urlParams.get('q');
+  if (q && library.value?.topics.some((t) => t.name === q)) {
+    activeTopicName.value = q;
+    selectedImage.value = null;
+  }
+}
+
+// --- New Functions ---
+
+function toggleDarkMode() {
+  isDarkMode.value = !isDarkMode.value;
+  localStorage.setItem('kuncian_theme', isDarkMode.value ? 'dark' : 'light');
+  updateThemeClass();
+}
+
+function updateThemeClass() {
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}
+
+function toggleFavorite(topicName, event) {
+  event.stopPropagation();
+  if (favorites.value.includes(topicName)) {
+    favorites.value = favorites.value.filter((t) => t !== topicName);
+  } else {
+    favorites.value.push(topicName);
+  }
+  localStorage.setItem('kuncian_favorites', JSON.stringify(favorites.value));
+}
+
+function highlight(text) {
+  const keyword = query.value.trim();
+  if (!keyword) return text;
+  const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.replace(regex, '<mark class="bg-[#fff3c4] dark:bg-[#b08e12] dark:text-white text-inherit rounded px-0.5">$1</mark>');
+}
+
+function copyTopicLink() {
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    copySuccess.value = true;
+    setTimeout(() => { copySuccess.value = false; }, 2000);
+  });
+}
+
+function zoomIn() {
+  if (zoomLevel.value < 5) zoomLevel.value += 0.5;
+}
+
+function zoomOut() {
+  if (zoomLevel.value > 0.5) zoomLevel.value -= 0.5;
+}
+
+function resetZoom() {
+  zoomLevel.value = 1;
+}
+
+async function copyImage() {
+  if (!selectedImage.value) return;
+  try {
+    const response = await fetch(fileUrl(selectedImage.value));
+    const blob = await response.blob();
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    alert('Gambar berhasil disalin ke clipboard!');
+  } catch (err) {
+    console.error('Gagal menyalin gambar:', err);
+    alert('Gagal menyalin gambar. Pastikan browser Anda mendukung fitur ini.');
+  }
+}
+
+function downloadImage() {
+  if (!selectedImage.value) return;
+  const a = document.createElement('a');
+  a.href = fileUrl(selectedImage.value);
+  a.download = selectedImage.value.name || 'download';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function handleScroll() {
+  showScrollTop.value = window.scrollY > 300;
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function scrollToId(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
 onMounted(() => {
   loadLibrary();
   window.addEventListener('keydown', handleKeydown);
+  window.addEventListener('popstate', handlePopState);
+  window.addEventListener('scroll', handleScroll);
+
+  const savedFavs = localStorage.getItem('kuncian_favorites');
+  if (savedFavs) favorites.value = JSON.parse(savedFavs);
+
+  const savedTheme = localStorage.getItem('kuncian_theme');
+  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    isDarkMode.value = true;
+  }
+  updateThemeClass();
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
+  window.removeEventListener('popstate', handlePopState);
+  window.removeEventListener('scroll', handleScroll);
 });
 </script>
 
 <template>
   <section class="saw-dots mx-auto flex w-full max-w-7xl flex-col gap-7 rounded-[2rem] px-1 py-3 sm:px-3">
+    <!-- Dark Mode Toggle Button -->
+    <div class="flex justify-end px-4 sm:px-6">
+      <button 
+        @click="toggleDarkMode" 
+        class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#222] bg-white dark:bg-slate-800 dark:border-black shadow-saw-sm dark:shadow-[5px_5px_0_#000] transition hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed"
+        aria-label="Toggle Dark Mode"
+      >
+        <svg v-if="!isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-800"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      </button>
+    </div>
+
     <header class="relative overflow-hidden rounded-[2rem] px-2 pb-2 pt-3 text-center sm:px-5">
       <div class="mx-auto mb-2 flex w-fit items-end justify-center gap-2">
-        <span class="h-10 w-10 rotate-[-10deg] rounded-full border-2 border-[#222] bg-[#f6bd4f] shadow-saw-sm"></span>
-        <span class="h-8 w-12 rotate-[6deg] rounded-[45%] border-2 border-[#222] bg-white shadow-saw-sm"></span>
-        <span class="h-11 w-11 rotate-[12deg] rounded-2xl border-2 border-[#222] bg-[#c9b6ea] shadow-saw-sm"></span>
+        <span class="h-10 w-10 rotate-[-10deg] rounded-full border-2 border-[#222] bg-[#f6bd4f] shadow-saw-sm dark:border-black dark:shadow-[5px_5px_0_#000]"></span>
+        <span class="h-8 w-12 rotate-[6deg] rounded-[45%] border-2 border-[#222] bg-white shadow-saw-sm dark:bg-slate-300 dark:border-black dark:shadow-[5px_5px_0_#000]"></span>
+        <span class="h-11 w-11 rotate-[12deg] rounded-2xl border-2 border-[#222] bg-[#c9b6ea] shadow-saw-sm dark:border-black dark:shadow-[5px_5px_0_#000]"></span>
       </div>
 
-      <p class="font-display text-5xl font-black tracking-[-0.08em] text-[#3c3c3c] sm:text-7xl">
+      <p class="font-display text-5xl font-black tracking-[-0.08em] text-[#3c3c3c] dark:text-white sm:text-7xl">
         kuncian.lo
       </p>
-      <h1 class="mx-auto mt-6 max-w-3xl font-display text-3xl font-black leading-tight tracking-[-0.04em] text-[#111] sm:text-5xl">
+      <h1 class="mx-auto mt-6 max-w-3xl font-display text-3xl font-black leading-tight tracking-[-0.04em] text-[#111] dark:text-slate-100 sm:text-5xl">
         Jembatan cepat menuju pulang cepat!
       </h1>
-      <p class="mx-auto mt-4 max-w-2xl font-monoish text-sm leading-7 text-slate-700 sm:text-base">
+      <p class="mx-auto mt-4 max-w-2xl font-monoish text-sm leading-7 text-slate-700 dark:text-slate-400 sm:text-base">
         Kerjaan banyak? Mau pulang cepat, tapi ada kuncian? Tenang, kini hadir kuncian.lo! 😎
       </p>
 
       <div class="mt-7 flex flex-wrap justify-center gap-4">
-        <a class="saw-button bg-[#9bd7e5] px-7 py-3 font-monoish text-lg font-bold text-[#111]" href="#daftar-topik">
+        <button @click="scrollToId('daftar-topik')" class="saw-button bg-[#9bd7e5] px-7 py-3 font-monoish text-lg font-bold text-[#111] dark:border-black dark:shadow-[5px_5px_0_#000]">
           Lihat topik
-        </a>
-        <a class="saw-button bg-[#f6bd4f] px-7 py-3 font-monoish text-lg font-bold text-[#111]" href="#dokumen-panel">
+        </button>
+        <button @click="scrollToId('dokumen-panel')" class="saw-button bg-[#f6bd4f] px-7 py-3 font-monoish text-lg font-bold text-[#111] dark:border-black dark:shadow-[5px_5px_0_#000]">
           Dokumen
-        </a>
+        </button>
       </div>
     </header>
 
@@ -221,24 +379,24 @@ onUnmounted(() => {
       <div
         v-for="item in stats"
         :key="item.label"
-        class="saw-card bg-white px-3 py-4 text-center"
+        class="saw-card bg-white dark:bg-slate-800 dark:border-black dark:shadow-[5px_5px_0_#000] px-3 py-4 text-center"
       >
-        <p class="font-monoish text-3xl font-bold text-[#111]">{{ item.value }}</p>
-        <p class="mt-1 text-xs font-black uppercase tracking-[0.18em] text-slate-600">{{ item.label }}</p>
+        <p class="font-monoish text-3xl font-bold text-[#111] dark:text-white">{{ item.value }}</p>
+        <p class="mt-1 text-xs font-black uppercase tracking-[0.18em] text-slate-600 dark:text-slate-400">{{ item.label }}</p>
       </div>
     </div>
 
-    <div v-if="error" class="saw-card bg-[#ffe4e9] p-5 font-monoish text-red-800">
+    <div v-if="error" class="saw-card bg-[#ffe4e9] dark:bg-red-950 dark:border-black dark:shadow-[5px_5px_0_#000] p-5 font-monoish text-red-800 dark:text-red-300">
       {{ error }}
     </div>
 
     <div class="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-      <aside id="daftar-topik" class="saw-card-soft h-fit p-4 lg:sticky lg:top-5">
+      <aside id="daftar-topik" class="saw-card-soft dark:bg-slate-800 dark:border-black dark:shadow-[5px_5px_0_#000] h-fit p-4 lg:sticky lg:top-5">
         <label class="block">
-          <span class="mb-2 block font-monoish text-sm font-bold text-[#222]">Cari topik atau file</span>
+          <span class="mb-2 block font-monoish text-sm font-bold text-[#222] dark:text-slate-200">Cari topik atau file</span>
           <input
             v-model="query"
-            class="saw-input w-full px-4 py-3 font-monoish text-sm font-bold text-[#222] outline-none transition focus:bg-[#fff3c4]"
+            class="saw-input w-full px-4 py-3 font-monoish text-sm font-bold text-[#222] dark:text-white dark:bg-slate-700 dark:border-black outline-none transition focus:bg-[#fff3c4] dark:focus:bg-slate-600"
             placeholder="Contoh: cuti, absensi..."
             type="search"
           />
@@ -248,52 +406,69 @@ onUnmounted(() => {
           <button
             v-for="topic in filteredTopics"
             :key="topic.name"
-            class="group flex w-full items-center justify-between border-2 border-[#222] px-4 py-3 text-left transition"
-            :class="activeTopic?.name === topic.name ? 'translate-x-[3px] translate-y-[3px] rounded-xl bg-[#f6bd4f] shadow-pressed' : 'rounded-xl bg-white shadow-saw-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed'"
+            class="group flex w-full items-center justify-between border-2 border-[#222] dark:border-black px-4 py-3 text-left transition"
+            :class="activeTopic?.name === topic.name ? 'translate-x-[3px] translate-y-[3px] rounded-xl bg-[#f6bd4f] dark:bg-[#c9952a] shadow-pressed dark:shadow-[3px_3px_0_#000]' : 'rounded-xl bg-white dark:bg-slate-700 shadow-saw-sm dark:shadow-[5px_5px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed'"
             type="button"
             @click="setActiveTopic(topic.name)"
           >
-            <span>
-              <span class="block text-sm font-black leading-tight text-[#111]">{{ topic.name }}</span>
-              <span class="mt-1 block font-monoish text-xs text-slate-600">
-                {{ topic.images }} gambar · {{ topic.documents }} dokumen
+            <div class="flex items-start gap-3 min-w-0">
+              <button @click="(e) => toggleFavorite(topic.name, e)" class="mt-0.5 shrink-0 transition-colors" aria-label="Pin Topic">
+                <svg v-if="favorites.includes(topic.name)" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#f6bd4f" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:stroke-white dark:fill-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 hover:text-yellow-500 dark:hover:text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </button>
+              <span class="min-w-0">
+                <span class="block text-sm font-black leading-tight text-[#111] dark:text-white" v-html="highlight(topic.name)"></span>
+                <span class="mt-1 block font-monoish text-xs text-slate-600 dark:text-slate-400">
+                  {{ topic.images }} gambar · {{ topic.documents }} dokumen
+                </span>
               </span>
-            </span>
+            </div>
             <span
-              class="rounded-full border-2 border-[#222] px-3 py-1 font-monoish text-xs font-bold"
-              :class="activeTopic?.name === topic.name ? 'bg-white text-[#111]' : 'bg-[#9bd7e5] text-[#111] group-hover:bg-[#f5a6b4]'"
+              class="rounded-full border-2 border-[#222] dark:border-black px-3 py-1 font-monoish text-xs font-bold shrink-0 ml-2"
+              :class="activeTopic?.name === topic.name ? 'bg-white dark:bg-slate-800 text-[#111] dark:text-white' : 'bg-[#9bd7e5] dark:bg-slate-600 text-[#111] dark:text-white group-hover:bg-[#f5a6b4] dark:group-hover:bg-slate-500'"
             >
               {{ topic.total }}
             </span>
           </button>
 
-          <div v-if="!loading && filteredTopics.length === 0" class="rounded-xl border-2 border-[#222] bg-white p-4 font-monoish text-sm text-slate-600 shadow-saw-sm">
+          <div v-if="!loading && filteredTopics.length === 0" class="rounded-xl border-2 border-[#222] dark:border-black bg-white dark:bg-slate-700 p-4 font-monoish text-sm text-slate-600 dark:text-slate-300 shadow-saw-sm dark:shadow-[5px_5px_0_#000]">
             Tidak ada topik yang cocok dengan pencarian.
           </div>
         </div>
       </aside>
 
       <section class="min-w-0">
-        <div class="saw-card bg-[#fffdf8] p-4 sm:p-6">
-          <div class="flex flex-col gap-3 border-b-2 border-[#222] pb-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p class="font-monoish text-sm font-bold uppercase tracking-[0.18em] text-slate-500">Topik aktif</p>
-              <h2 class="mt-1 font-display text-3xl font-black tracking-[-0.04em] text-[#111] sm:text-4xl">
-                {{ activeTopic?.name || 'Memuat data...' }}
-              </h2>
+        <div class="saw-card bg-[#fffdf8] dark:bg-slate-800 dark:border-black dark:shadow-[5px_5px_0_#000] p-4 sm:p-6">
+          <div class="flex flex-col gap-3 border-b-2 border-[#222] dark:border-slate-700 pb-5 sm:flex-row sm:items-end sm:justify-between">
+            <div class="min-w-0 flex-1">
+              <p class="font-monoish text-sm font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Topik aktif</p>
+              <div class="flex items-center gap-3 mt-1">
+                <h2 class="font-display text-3xl font-black tracking-[-0.04em] text-[#111] dark:text-white sm:text-4xl truncate">
+                  {{ activeTopic?.name || 'Memuat data...' }}
+                </h2>
+                <button 
+                  v-if="activeTopic" 
+                  @click="copyTopicLink"
+                  class="shrink-0 p-2 border-2 border-[#222] dark:border-black rounded-lg bg-white dark:bg-slate-700 shadow-saw-sm dark:shadow-[3px_3px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed transition"
+                  :title="copySuccess ? 'Tersalin!' : 'Copy Link Topik'"
+                >
+                  <svg v-if="!copySuccess" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-[#111] dark:text-white"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </button>
+              </div>
             </div>
 
-            <a
+            <button
               v-if="activeTopic"
-              class="saw-button inline-flex items-center justify-center bg-[#f5a6b4] px-5 py-3 font-monoish text-sm font-bold text-[#111]"
-              href="#dokumen-panel"
+              class="saw-button inline-flex shrink-0 items-center justify-center bg-[#f5a6b4] px-5 py-3 font-monoish text-sm font-bold text-[#111] dark:border-black dark:shadow-[5px_5px_0_#000]"
+              @click="scrollToId('dokumen-panel')"
             >
               Lihat dokumen
-            </a>
+            </button>
           </div>
 
           <div v-if="loading" class="grid gap-4 py-6 sm:grid-cols-2 xl:grid-cols-3">
-            <div v-for="item in 6" :key="item" class="h-64 animate-pulse rounded-2xl border-2 border-[#222] bg-white shadow-saw-sm"></div>
+            <div v-for="item in 6" :key="item" class="h-64 animate-pulse rounded-2xl border-2 border-[#222] dark:border-slate-700 bg-white dark:bg-slate-700 shadow-saw-sm dark:shadow-[5px_5px_0_#000]"></div>
           </div>
 
           <div v-else class="py-6">
@@ -301,11 +476,11 @@ onUnmounted(() => {
               <button
                 v-for="file in filteredImages"
                 :key="file.path"
-                class="group overflow-hidden rounded-2xl border-2 border-[#222] bg-white p-2 text-left shadow-saw-sm transition hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed"
+                class="group overflow-hidden rounded-2xl border-2 border-[#222] dark:border-black bg-white dark:bg-slate-700 p-2 text-left shadow-saw-sm dark:shadow-[5px_5px_0_#000] transition hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed"
                 type="button"
                 @click="selectImage(file)"
               >
-                <div class="aspect-[5/3] overflow-hidden rounded-xl border-2 border-[#222] bg-[#fffaf0]">
+                <div class="aspect-[5/3] overflow-hidden rounded-xl border-2 border-[#222] dark:border-slate-900 bg-[#fffaf0] dark:bg-slate-800">
                   <img
                     class="h-full w-full object-contain p-1 transition duration-500 group-hover:scale-105"
                     :alt="file.name"
@@ -314,13 +489,13 @@ onUnmounted(() => {
                   />
                 </div>
                 <div class="px-2 py-3">
-                  <p class="line-clamp-2 text-xs font-black text-[#111]">{{ file.name }}</p>
-                  <p class="mt-1 font-monoish text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{{ file.extension }}</p>
+                  <p class="line-clamp-2 text-xs font-black text-[#111] dark:text-white">{{ file.name }}</p>
+                  <p class="mt-1 font-monoish text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{{ file.extension }}</p>
                 </div>
               </button>
             </div>
 
-            <div v-else class="rounded-2xl border-2 border-[#222] bg-[#eef8f5] p-8 text-center font-monoish text-slate-600 shadow-saw-sm">
+            <div v-else class="rounded-2xl border-2 border-[#222] dark:border-black bg-[#eef8f5] dark:bg-slate-700 p-8 text-center font-monoish text-slate-600 dark:text-slate-300 shadow-saw-sm dark:shadow-[5px_5px_0_#000]">
               Belum ada gambar yang cocok di topik ini.
             </div>
           </div>
@@ -328,14 +503,14 @@ onUnmounted(() => {
 
         <div
           v-if="activeTopic"
-          class="saw-card mt-6 bg-[#eef8f5] p-4 sm:p-6"
+          class="saw-card mt-6 bg-[#eef8f5] dark:bg-slate-800 dark:border-black dark:shadow-[5px_5px_0_#000] p-4 sm:p-6"
         >
           <div id="dokumen-panel" class="mb-4 flex items-center justify-between gap-3">
             <div>
-              <p class="font-monoish text-sm font-bold uppercase tracking-[0.18em] text-slate-500">File pendukung</p>
-              <h3 class="font-display text-2xl font-black tracking-[-0.03em] text-[#111]">Dokumen</h3>
+              <p class="font-monoish text-sm font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">File pendukung</p>
+              <h3 class="font-display text-2xl font-black tracking-[-0.03em] text-[#111] dark:text-white">Dokumen</h3>
             </div>
-            <span class="rounded-full border-2 border-[#222] bg-white px-4 py-2 font-monoish text-sm font-bold text-[#111]">
+            <span class="rounded-full border-2 border-[#222] dark:border-black bg-white dark:bg-slate-700 px-4 py-2 font-monoish text-sm font-bold text-[#111] dark:text-white">
               {{ filteredDocuments.length }} file
             </span>
           </div>
@@ -344,71 +519,107 @@ onUnmounted(() => {
             <a
               v-for="file in filteredDocuments"
               :key="file.path"
-              class="flex items-center gap-3 rounded-2xl border-2 border-[#222] bg-white p-4 shadow-saw-sm transition hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed"
+              class="flex items-center gap-3 rounded-2xl border-2 border-[#222] dark:border-black bg-white dark:bg-slate-700 p-4 shadow-saw-sm dark:shadow-[5px_5px_0_#000] transition hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed"
               :href="fileUrl(file)"
               target="_blank"
               rel="noreferrer"
             >
-              <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-[#222] bg-[#f6bd4f] font-monoish text-xs font-bold text-[#111]">
+              <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-[#222] dark:border-black bg-[#f6bd4f] font-monoish text-xs font-bold text-[#111]">
                 {{ file.extension }}
               </span>
               <span class="min-w-0">
-                <span class="line-clamp-2 text-sm font-black text-[#111]">{{ file.name }}</span>
-                <span class="mt-1 block font-monoish text-xs font-bold text-slate-500">Buka di tab baru</span>
+                <span class="line-clamp-1 break-all text-sm font-black text-[#111] dark:text-white" :title="file.name">{{ file.name }}</span>
+                <span class="mt-1 block font-monoish text-xs font-bold text-slate-500 dark:text-slate-400">Buka di tab baru</span>
               </span>
             </a>
           </div>
 
-          <div v-else class="rounded-2xl border-2 border-[#222] bg-white p-6 text-center font-monoish text-slate-600 shadow-saw-sm">
+          <div v-else class="rounded-2xl border-2 border-[#222] dark:border-black bg-white dark:bg-slate-700 p-6 text-center font-monoish text-slate-600 dark:text-slate-300 shadow-saw-sm dark:shadow-[5px_5px_0_#000]">
             Tidak ada dokumen yang cocok.
           </div>
         </div>
       </section>
     </div>
 
+    <!-- Image Viewer Modal -->
     <div
       v-if="selectedImage"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-[#222]/80 p-3 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-[#222]/90 dark:bg-slate-950/90 p-2 sm:p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       @click.self="closeImage"
     >
-      <div class="max-h-full w-full max-w-6xl overflow-hidden rounded-2xl border-2 border-[#222] bg-white shadow-saw">
-        <div class="flex items-center justify-between gap-3 border-b-2 border-[#222] bg-[#f6bd4f] px-4 py-3 text-[#111]">
-          <div class="min-w-0">
+      <div class="flex max-h-full w-full max-w-7xl flex-col overflow-hidden rounded-2xl border-2 border-[#222] dark:border-black bg-white dark:bg-slate-800 shadow-saw dark:shadow-[8px_8px_0_#000]">
+        
+        <!-- Header / Toolbar Modal -->
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3 border-b-2 border-[#222] dark:border-black bg-[#f6bd4f] dark:bg-[#b08e12] px-4 py-3 text-[#111] dark:text-white">
+          <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-black">{{ selectedImage.name }}</p>
-            <p class="font-monoish text-xs text-slate-700">{{ selectedImage.topic }} · {{ selectedImagePosition }}</p>
+            <p class="font-monoish text-xs text-slate-800 dark:text-slate-200">{{ selectedImage.topic }} · {{ selectedImagePosition }}</p>
           </div>
-          <div class="flex shrink-0 items-center gap-2">
-            <button
-              class="saw-button bg-[#9bd7e5] px-4 py-2 font-monoish text-sm font-bold"
-              type="button"
-              aria-label="Gambar sebelumnya"
-              @click="showPreviousImage"
-            >
-              Prev
+          
+          <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <!-- Action buttons (Zoom, Copy, Download) -->
+            <button @click="zoomOut" class="p-2 border-2 border-[#222] dark:border-black rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-100 transition shadow-pressed dark:shadow-[2px_2px_0_#000]" title="Zoom Out">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
             </button>
-            <button
-              class="saw-button bg-[#f5a6b4] px-4 py-2 font-monoish text-sm font-bold"
-              type="button"
-              aria-label="Gambar berikutnya"
-              @click="showNextImage"
-            >
-              Next
+            <button @click="resetZoom" class="p-2 border-2 border-[#222] dark:border-black rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-100 transition shadow-pressed dark:shadow-[2px_2px_0_#000]" title="Reset Zoom">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3zM12 8v8M8 12h8"/></svg>
             </button>
-            <button
-              class="saw-button bg-white px-4 py-2 font-monoish text-sm font-bold"
-              type="button"
-              @click="closeImage"
-            >
-              Tutup
+            <button @click="zoomIn" class="p-2 border-2 border-[#222] dark:border-black rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-100 transition shadow-pressed dark:shadow-[2px_2px_0_#000]" title="Zoom In">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="w-px h-6 bg-black/20 dark:bg-white/20 mx-1"></div>
+            <button @click="copyImage" class="p-2 border-2 border-[#222] dark:border-black rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-100 transition shadow-pressed dark:shadow-[2px_2px_0_#000]" title="Copy Image">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+            <button @click="downloadImage" class="p-2 border-2 border-[#222] dark:border-black rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-100 transition shadow-pressed dark:shadow-[2px_2px_0_#000]" title="Download Image">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            </button>
+
+            <!-- Navigation and Close -->
+            <div class="hidden sm:flex shrink-0 items-center gap-2 ml-2">
+              <button class="saw-button bg-[#9bd7e5] dark:bg-slate-600 dark:border-black dark:text-white px-4 py-2 font-monoish text-sm font-bold" type="button" @click="showPreviousImage">Prev</button>
+              <button class="saw-button bg-[#f5a6b4] dark:bg-slate-600 dark:border-black dark:text-white px-4 py-2 font-monoish text-sm font-bold" type="button" @click="showNextImage">Next</button>
+              <button class="saw-button bg-white dark:bg-slate-700 dark:border-black dark:text-white px-4 py-2 font-monoish text-sm font-bold" type="button" @click="closeImage">Tutup</button>
+            </div>
+            
+            <button class="sm:hidden ml-1 p-2 border-2 border-[#222] dark:border-black rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-100 transition shadow-pressed" type="button" @click="closeImage">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
           </div>
         </div>
-        <div class="relative max-h-[85vh] overflow-auto bg-[#fffaf0]">
-          <img class="mx-auto h-auto max-h-none w-auto max-w-full" :alt="selectedImage.name" :src="fileUrl(selectedImage)" />
+
+        <!-- Image Content (Overflow Auto for Panning) -->
+        <div class="relative flex-1 overflow-auto bg-[#fffaf0] dark:bg-slate-900" style="min-height: 60vh;">
+          <div class="flex min-h-full min-w-full p-4" :class="zoomLevel > 1 ? 'items-start justify-start' : 'items-center justify-center'">
+            <img 
+              class="transition-transform duration-200" 
+              :class="zoomLevel > 1 ? 'h-auto max-h-none w-auto max-w-none' : 'max-h-[75vh] max-w-full object-contain'"
+              :style="{ transform: `scale(${zoomLevel})`, transformOrigin: zoomLevel > 1 ? 'top left' : 'center' }"
+              :alt="selectedImage.name" 
+              :src="fileUrl(selectedImage)" 
+            />
+          </div>
+        </div>
+        
+        <!-- Mobile Bottom Navigation -->
+        <div class="flex sm:hidden items-center justify-between border-t-2 border-[#222] dark:border-black bg-white dark:bg-slate-800 p-3">
+          <button class="saw-button bg-[#9bd7e5] dark:bg-slate-600 dark:border-black dark:text-white px-5 py-2 font-monoish text-sm font-bold" type="button" @click="showPreviousImage">Prev</button>
+          <span class="font-monoish text-sm font-bold text-[#111] dark:text-white">{{ selectedImagePosition }}</span>
+          <button class="saw-button bg-[#f5a6b4] dark:bg-slate-600 dark:border-black dark:text-white px-5 py-2 font-monoish text-sm font-bold" type="button" @click="showNextImage">Next</button>
         </div>
       </div>
     </div>
+
+    <!-- Scroll To Top FAB -->
+    <button
+      v-show="showScrollTop"
+      @click="scrollToTop"
+      class="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#222] bg-[#f6bd4f] shadow-saw-sm transition hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed dark:border-black dark:shadow-[5px_5px_0_#000]"
+      aria-label="Scroll to top"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
   </section>
 </template>

@@ -1,5 +1,6 @@
 export default {
   content: ['./src/**/*.{astro,html,js,jsx,vue}'],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
