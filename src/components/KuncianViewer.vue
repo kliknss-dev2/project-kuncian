@@ -222,6 +222,20 @@ function handlePopState() {
 
 // --- New Functions ---
 
+function isTopicNew(topic) {
+  if (!topic.createdAtMs) return false;
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  return (Date.now() - topic.createdAtMs) < SEVEN_DAYS_MS;
+}
+
+function isTopicUpdated(topic) {
+  if (!topic.updatedAtMs || !topic.createdAtMs) return false;
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const isModifiedRecently = (Date.now() - topic.updatedAtMs) < SEVEN_DAYS_MS;
+  const isActuallyUpdated = (topic.updatedAtMs - topic.createdAtMs) > 60000; // > 1 min difference
+  return isModifiedRecently && isActuallyUpdated && !isTopicNew(topic);
+}
+
 function toggleDarkMode() {
   isDarkMode.value = !isDarkMode.value;
   localStorage.setItem('kuncian_theme', isDarkMode.value ? 'dark' : 'light');
@@ -416,9 +430,13 @@ onUnmounted(() => {
                 <svg v-if="favorites.includes(topic.name)" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#f6bd4f" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:stroke-white dark:fill-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 hover:text-yellow-500 dark:hover:text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </button>
-              <span class="min-w-0">
-                <span class="block text-sm font-black leading-tight text-[#111] dark:text-white" v-html="highlight(topic.name)"></span>
-                <span class="mt-1 block font-monoish text-xs text-slate-600 dark:text-slate-400">
+              <span class="min-w-0 flex-1">
+                <span class="flex flex-wrap items-center gap-1.5 text-sm font-black leading-tight text-[#111] dark:text-white">
+                  <span class="break-all" v-html="highlight(topic.name)"></span>
+                  <span v-if="isTopicNew(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#f5a6b4] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black shrink-0 leading-none shadow-saw-sm">New</span>
+                  <span v-else-if="isTopicUpdated(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#9bd7e5] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black shrink-0 leading-none shadow-saw-sm">Update</span>
+                </span>
+                <span class="mt-1.5 block font-monoish text-xs text-slate-600 dark:text-slate-400">
                   {{ topic.images }} gambar · {{ topic.documents }} dokumen
                 </span>
               </span>

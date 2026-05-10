@@ -121,16 +121,26 @@ export async function readLibrary() {
     }
 
     const topicPath = path.join(KUNCIAN_DIR, entry.name);
+    const topicStats = await fs.stat(topicPath);
     const topicFiles = await fs.readdir(topicPath, { withFileTypes: true });
     const files = [];
+
+    let latestMtimeMs = topicStats.mtimeMs;
+    const createdAtMs = topicStats.birthtimeMs;
 
     for (const file of topicFiles) {
       if (!file.isFile() || file.name.startsWith('.') || PROJECT_FILES.has(file.name)) {
         continue;
       }
 
+      const filePath = path.join(topicPath, file.name);
+      const fileStats = await fs.stat(filePath);
       const type = getFileType(file.name);
       const relativePath = path.join(entry.name, file.name);
+
+      if (fileStats.mtimeMs > latestMtimeMs) {
+        latestMtimeMs = fileStats.mtimeMs;
+      }
 
       files.push({
         name: file.name,
@@ -138,7 +148,9 @@ export async function readLibrary() {
         path: relativePath.split(path.sep).join('/'),
         url: getPublicFileUrl(relativePath.split(path.sep).join('/')),
         type,
-        extension: path.extname(file.name).replace('.', '').toUpperCase() || 'FILE'
+        extension: path.extname(file.name).replace('.', '').toUpperCase() || 'FILE',
+        createdAtMs: fileStats.birthtimeMs,
+        updatedAtMs: fileStats.mtimeMs
       });
     }
 
@@ -149,6 +161,8 @@ export async function readLibrary() {
       images: files.filter((file) => file.type === 'image').length,
       documents: files.filter((file) => file.type === 'document').length,
       total: files.length,
+      createdAtMs,
+      updatedAtMs: latestMtimeMs,
       files
     });
   }
