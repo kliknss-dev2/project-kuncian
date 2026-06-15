@@ -47,9 +47,11 @@ const filteredTopics = computed(() => {
   }
 
   return topics.slice().sort((a, b) => {
+    const aLabel = (isTopicNew(a) || isTopicUpdated(a)) ? 2 : 0;
+    const bLabel = (isTopicNew(b) || isTopicUpdated(b)) ? 2 : 0;
     const aFav = favorites.value.includes(a.name) ? 1 : 0;
     const bFav = favorites.value.includes(b.name) ? 1 : 0;
-    return bFav - aFav;
+    return (bLabel + bFav) - (aLabel + aFav);
   });
 });
 
@@ -222,17 +224,18 @@ function handlePopState() {
 
 // --- New Functions ---
 
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
 function isTopicNew(topic) {
   if (!topic.createdAtMs) return false;
-  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-  return (Date.now() - topic.createdAtMs) < SEVEN_DAYS_MS;
+  return (Date.now() - topic.createdAtMs) < THREE_DAYS_MS;
 }
 
 function isTopicUpdated(topic) {
   if (!topic.updatedAtMs || !topic.createdAtMs) return false;
-  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-  const isModifiedRecently = (Date.now() - topic.updatedAtMs) < SEVEN_DAYS_MS;
-  const isActuallyUpdated = (topic.updatedAtMs - topic.createdAtMs) > 60000; // > 1 min difference
+  const ONE_HOUR_MS = 60 * 60 * 1000;
+  const isModifiedRecently = (Date.now() - topic.updatedAtMs) < THREE_DAYS_MS;
+  const isActuallyUpdated = (topic.updatedAtMs - topic.createdAtMs) > ONE_HOUR_MS;
   return isModifiedRecently && isActuallyUpdated && !isTopicNew(topic);
 }
 
