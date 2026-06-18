@@ -424,7 +424,7 @@ onUnmounted(() => {
             v-for="topic in filteredTopics"
             :key="topic.name"
             class="group flex w-full items-center justify-between border-2 border-[#222] dark:border-black px-4 py-3 text-left transition"
-            :class="activeTopic?.name === topic.name ? 'translate-x-[3px] translate-y-[3px] rounded-xl bg-[#f6bd4f] dark:bg-[#c9952a] shadow-pressed dark:shadow-[3px_3px_0_#000]' : 'rounded-xl bg-white dark:bg-slate-700 shadow-saw-sm dark:shadow-[5px_5px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed'"
+            :class="activeTopic?.name === topic.name ? 'translate-x-[3px] translate-y-[3px] rounded-xl bg-[#f6bd4f]  shadow-pressed dark:shadow-[3px_3px_0_#000]' : 'rounded-xl bg-white dark:bg-slate-700 shadow-saw-sm dark:shadow-[5px_5px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed'"
             type="button"
             @click="setActiveTopic(topic.name)"
           >
@@ -435,7 +435,7 @@ onUnmounted(() => {
               </button>
               <span class="min-w-0 flex-1">
                 <span class="flex flex-wrap items-center gap-1.5 text-sm font-black leading-tight text-[#111] dark:text-white">
-                  <span class="break-all" v-html="highlight(topic.name)"></span>
+                  <span class="truncate" v-html="highlight(topic.name)"></span>
                   <span v-if="isTopicNew(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#f5a6b4] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black shrink-0 leading-none shadow-saw-sm">New</span>
                   <span v-else-if="isTopicUpdated(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#9bd7e5] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black shrink-0 leading-none shadow-saw-sm">Update</span>
                 </span>

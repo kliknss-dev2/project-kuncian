@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import topicMeta from '../generated/topic-meta.json';
 
 const ROOT_DIR = process.cwd();
 const KUNCIAN_DIR = path.join(ROOT_DIR, 'public', 'content', 'kuncian');
@@ -121,12 +122,12 @@ export async function readLibrary() {
     }
 
     const topicPath = path.join(KUNCIAN_DIR, entry.name);
-    const topicStats = await fs.stat(topicPath);
     const topicFiles = await fs.readdir(topicPath, { withFileTypes: true });
     const files = [];
 
-    let latestMtimeMs = topicStats.mtimeMs;
-    const createdAtMs = topicStats.birthtimeMs;
+    const gitMeta = topicMeta[entry.name] || {};
+    let latestMtimeMs = gitMeta.updatedAtMs || 0;
+    const createdAtMs = gitMeta.createdAtMs || 0;
 
     for (const file of topicFiles) {
       if (!file.isFile() || file.name.startsWith('.') || PROJECT_FILES.has(file.name)) {
@@ -137,10 +138,6 @@ export async function readLibrary() {
       const fileStats = await fs.stat(filePath);
       const type = getFileType(file.name);
       const relativePath = path.join(entry.name, file.name);
-
-      if (fileStats.mtimeMs > latestMtimeMs) {
-        latestMtimeMs = fileStats.mtimeMs;
-      }
 
       files.push({
         name: file.name,
