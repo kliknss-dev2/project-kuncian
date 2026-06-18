@@ -38,12 +38,7 @@ const filteredTopics = computed(() => {
   let topics = library.value.topics;
 
   if (keyword) {
-    topics = topics.filter((topic) => {
-      const topicMatch = topic.name.toLowerCase().includes(keyword);
-      const fileMatch = topic.files.some((file) => file.name.toLowerCase().includes(keyword));
-
-      return topicMatch || fileMatch;
-    });
+    topics = topics.filter((topic) => topic.name.toLowerCase().includes(keyword));
   }
 
   return topics.slice().sort((a, b) => {
@@ -63,8 +58,8 @@ const activeTopic = computed(() => {
   return filteredTopics.value.find((topic) => topic.name === activeTopicName.value) || filteredTopics.value[0] || library.value.topics[0];
 });
 
-const filteredImages = computed(() => filterFiles(imageFiles.value));
-const filteredDocuments = computed(() => filterFiles(documentFiles.value));
+const filteredImages = computed(() => imageFiles.value);
+const filteredDocuments = computed(() => documentFiles.value);
 
 const selectedImageIndex = computed(() => {
   if (!selectedImage.value) {
@@ -99,18 +94,6 @@ const stats = computed(() => {
     { label: 'Gambar', value: totalImages }
   ];
 });
-
-function filterFiles(files) {
-  const keyword = query.value.trim().toLowerCase();
-
-  if (!keyword) {
-    return files;
-  }
-
-  return files.filter((file) => {
-    return file.name.toLowerCase().includes(keyword) || file.topic.toLowerCase().includes(keyword);
-  });
-}
 
 function setActiveTopic(topicName) {
   activeTopicName.value = topicName;
