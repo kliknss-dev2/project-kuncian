@@ -34,5 +34,6 @@ for (const entry of entries) {
   };
 }
 
+await fs.mkdir(path.dirname(OUTPUT_FILE), { recursive: true });
 await fs.writeFile(OUTPUT_FILE, JSON.stringify(meta, null, 2));
 console.log(`[topic-meta] Generated ${Object.keys(meta).length} topics → src/generated/topic-meta.json`);
