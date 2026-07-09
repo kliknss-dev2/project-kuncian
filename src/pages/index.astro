@@ -1,10 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import KuncianViewer from '../components/KuncianViewer.vue';
+import AppHub from '../components/AppHub.vue';
 ---
 
-<BaseLayout title="Kuncian Viewer">
-  <main class="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
-    <KuncianViewer client:load />
-  </main>
+<BaseLayout title="kotak.lo" description="Kumpulan alat & aplikasi mini.">
+  <AppHub client:load />
 </BaseLayout>

@@ -9,7 +9,7 @@ const loading = ref(true);
 const error = ref('');
 
 // --- New States ---
-const isDarkMode = ref(false);
+const isDarkMode = computed(() => document.documentElement.classList.contains('dark'));
 const favorites = ref([]);
 const zoomLevel = ref(1);
 const showScrollTop = ref(false);
@@ -222,20 +222,6 @@ function isTopicUpdated(topic) {
   return isModifiedRecently && isActuallyUpdated && !isTopicNew(topic);
 }
 
-function toggleDarkMode() {
-  isDarkMode.value = !isDarkMode.value;
-  localStorage.setItem('kuncian_theme', isDarkMode.value ? 'dark' : 'light');
-  updateThemeClass();
-}
-
-function updateThemeClass() {
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-}
-
 function toggleFavorite(topicName, event) {
   event.stopPropagation();
   if (favorites.value.includes(topicName)) {
@@ -319,12 +305,7 @@ onMounted(() => {
 
   const savedFavs = localStorage.getItem('kuncian_favorites');
   if (savedFavs) favorites.value = JSON.parse(savedFavs);
-
-  const savedTheme = localStorage.getItem('kuncian_theme');
-  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    isDarkMode.value = true;
-  }
-  updateThemeClass();
+  // Dark mode state is applied globally by BaseLayout + AppHub
 });
 
 onUnmounted(() => {
@@ -336,16 +317,18 @@ onUnmounted(() => {
 
 <template>
   <section class="saw-dots mx-auto flex w-full max-w-7xl flex-col gap-7 rounded-[2rem] px-1 py-3 sm:px-3">
-    <!-- Dark Mode Toggle Button -->
-    <div class="flex justify-end px-4 sm:px-6">
-      <button 
-        @click="toggleDarkMode" 
-        class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#222] bg-white dark:bg-slate-800 dark:border-black shadow-saw-sm dark:shadow-[5px_5px_0_#000] transition hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed"
-        aria-label="Toggle Dark Mode"
+    <!-- Back button -->
+    <div class="flex justify-start px-4 sm:px-6">
+      <a
+        href="/"
+        class="kv-back-btn"
+        aria-label="Kembali ke halaman utama"
       >
-        <svg v-if="!isDarkMode" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-800"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-      </button>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        Kembali
+      </a>
     </div>
 
     <header class="relative overflow-hidden rounded-[2rem] px-2 pb-2 pt-3 text-center sm:px-5">
@@ -627,3 +610,34 @@ onUnmounted(() => {
     </button>
   </section>
 </template>
+
+<style scoped>
+.kv-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ink);
+  text-decoration: none;
+  background: white;
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  padding: 0.32em 0.8em;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform 130ms ease, box-shadow 130ms ease;
+}
+.kv-back-btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+html.dark .kv-back-btn {
+  background: #1e293b;
+  color: #f1f5f9;
+  border-color: #000;
+  box-shadow: 3px 3px 0 #000;
+}
+html.dark .kv-back-btn:hover {
+  box-shadow: 1px 1px 0 #000;
+}
+</style>
