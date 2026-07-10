@@ -112,7 +112,15 @@ const diffMap = computed(() => {
 // ── Actions ────────────────────────────────────────────────
 function format() {
   if (!activeParseResult.value.ok) return;
-  setOutputMode(activeTabId.value, 'tree');
+  const formatted = JSON.stringify(activeParseResult.value.data, null, activeTab.value?.indentSize ?? 2);
+  
+  // Update the textarea input with formatted JSON
+  if (activeTab.value) {
+    activeTab.value.input = formatted;
+  }
+  
+  // Update the text output panel as well
+  setTextOutput(activeTabId.value, formatted);
 }
 
 function minify() {
@@ -481,7 +489,7 @@ watch(activeTabId, saveToStorage);
       <div class="jf-actions-col">
         <div class="jf-indent-ctrl">
           <label for="jf-indent" class="jf-ctrl-label">Indent</label>
-          <select id="jf-indent" v-model="activeTab.indentSize" class="jf-select">
+          <select id="jf-indent" v-model="activeTab.indentSize" @change="format" class="jf-select">
             <option :value="2">2 spasi</option>
             <option :value="4">4 spasi</option>
             <option :value="'\t'">Tab</option>
