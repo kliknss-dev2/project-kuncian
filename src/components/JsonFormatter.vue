@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import JsonTreeNode from './JsonTreeNode.vue';
+import { Codemirror } from 'vue-codemirror';
+import { json } from '@codemirror/lang-json';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 // ── Constants ──────────────────────────────────────────────
 const MAX_TABS    = 8;
@@ -9,13 +12,13 @@ const STORAGE_KEY = 'kotak-jf-v1';
 // ── ID counter ─────────────────────────────────────────────
 const nextId = ref(1);
 
-function makeTab() {
+function makeTab(name) {
   const id = nextId.value++;
-  return { id, name: `JSON ${id}`, input: '', indentSize: 2 };
+  return { id, name: name || `JSON ${id}`, input: '', indentSize: 2 };
 }
 
 // ── Core state ─────────────────────────────────────────────
-const tabs        = ref([makeTab()]);
+const tabs        = ref([makeTab('JSON 1')]);
 const activeTabId = ref(tabs.value[0].id);
 
 // Rename state
@@ -114,12 +117,7 @@ function format() {
   if (!activeParseResult.value.ok) return;
   const formatted = JSON.stringify(activeParseResult.value.data, null, activeTab.value?.indentSize ?? 2);
   
-  // Update the textarea input with formatted JSON
-  if (activeTab.value) {
-    activeTab.value.input = formatted;
-  }
-  
-  // Update the text output panel as well
+  // Update the text output panel
   setTextOutput(activeTabId.value, formatted);
 }
 
@@ -183,7 +181,11 @@ function setTextOutput(tabId, text) {
 // ── Tab Management ─────────────────────────────────────────
 function addTab() {
   if (tabs.value.length >= MAX_TABS) return;
-  const tab = makeTab();
+  let num = 1;
+  while (tabs.value.some(t => t.name === `JSON ${num}`)) {
+    num++;
+  }
+  const tab = makeTab(`JSON ${num}`);
   tabs.value.push(tab);
   activeTabId.value = tab.id;
 }
@@ -234,6 +236,23 @@ function onToggle(tabId, path) {
   else list.push(path);
   collapsedByTab.value = { ...collapsedByTab.value, [tabId]: list };
 }
+
+// ── State ────────────────────────────────────────────────
+const isDarkMode = ref(false);
+onMounted(() => {
+  if (typeof document !== 'undefined') {
+    isDarkMode.value = document.documentElement.classList.contains('dark');
+    const observer = new MutationObserver(() => {
+      isDarkMode.value = document.documentElement.classList.contains('dark');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  }
+});
+const cmExtensions = computed(() => {
+  const exts = [json()];
+  if (isDarkMode.value) exts.push(oneDark);
+  return exts;
+});
 
 // ── Compare ────────────────────────────────────────────────
 function toggleCompare() {
@@ -434,38 +453,21 @@ watch(activeTabId, saveToStorage);
     <div v-if="!compareMode" class="jf-editor">
 
       <!-- Input Panel -->
-      <div class="jf-panel">
+      <div class="jf-panel jf-input-panel">
         <div class="jf-panel-header">
-          <span class="jf-panel-label">Input</span>
+          <span class="jf-panel-label">Raw Input</span>
           <div class="jf-panel-actions">
             <button class="jf-action-btn" @click="loadSample">Sample</button>
             <button class="jf-action-btn jf-btn-danger" @click="clearTab" :disabled="!activeInput">Clear</button>
           </div>
         </div>
-        <!-- Line gutter + textarea -->
-        <div class="jf-input-area">
-          <div class="jf-line-gutter" ref="gutterEl">
-            <div
-              v-for="n in lineCount"
-              :key="n"
-              class="jf-gutter-line"
-              :class="{ 'jf-gutter-err': n === errorLine }"
-            >
-              <span v-if="n === errorLine" class="jf-gutter-err-arrow">▶</span>
-              <span v-else>{{ n }}</span>
-            </div>
-          </div>
-          <textarea
-            id="jf-input"
-            ref="textareaEl"
-            v-model="activeInput"
-            class="jf-textarea"
-            placeholder='Paste JSON di sini…&#10;{"key": "value"}'
-            spellcheck="false"
-            autocomplete="off"
-            @scroll="syncGutter"
-          />
-        </div>
+        <Codemirror
+          v-if="activeTab"
+          v-model="activeTab.input"
+          :extensions="cmExtensions"
+          placeholder="Paste JSON kotor di sini..."
+          class="jf-cm-editor"
+        />
         <!-- Status bar -->
         <div class="jf-status-bar">
           <div v-if="activeParseResult.error" class="jf-status-error">
@@ -473,9 +475,6 @@ watch(activeTabId, saveToStorage);
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <span class="jf-status-errmsg">{{ activeParseResult.error }}</span>
-            <span v-if="errorLine" class="jf-err-loc-badge">
-              Line {{ errorLine }}{{ errorCol ? `, Col ${errorCol}` : '' }}
-            </span>
           </div>
           <div v-else-if="activeParseResult.ok" class="jf-status-ok">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -521,43 +520,24 @@ watch(activeTabId, saveToStorage);
       <!-- Output Panel -->
       <div class="jf-panel">
         <div class="jf-panel-header">
-          <div class="jf-output-tabs">
-            <button class="jf-out-tab" :class="{ active: activeOutputMode === 'tree' }" @click="setOutputMode(activeTabId, 'tree')">
-              🌳 Tree
-            </button>
-            <button class="jf-out-tab" :class="{ active: activeOutputMode === 'text' }" @click="setOutputMode(activeTabId, 'text')" :disabled="!activeTextOutput">
-              📄 Text
-            </button>
+          <span class="jf-panel-label">Formatted Output</span>
+          <div class="jf-output-tabs" style="margin-left: auto;">
+            <span v-if="activeParseResult.ok" class="jf-badge jf-badge-ok">✓ Valid</span>
+            <span v-else-if="!activeParseResult.empty" class="jf-badge jf-badge-err">✗ Invalid</span>
           </div>
         </div>
-
-        <!-- Tree view -->
-        <div v-if="activeOutputMode === 'tree'" class="jf-output">
-          <div v-if="activeParseResult.ok" class="jf-tree-wrap jf-tree-numbered">
-            <JsonTreeNode
-              :nodeKey="null"
-              :value="activeParseResult.data"
-              :depth="0"
-              path=""
-              :collapsedPaths="activeCollapsed"
-              :diffMap="{}"
-              :isLast="true"
-              :isArrayChild="false"
-              @toggle="onToggle(activeTabId, $event)"
-            />
-          </div>
-          <div v-else-if="!activeParseResult.empty" class="jf-output-msg jf-msg-error">
-            JSON tidak valid — perbaiki input terlebih dahulu.
-          </div>
-          <div v-else class="jf-output-msg jf-msg-empty">
-            Tree view muncul otomatis setelah JSON valid ✨
-          </div>
+        
+        <Codemirror
+          v-if="activeParseResult.ok"
+          v-model="activeTextOutput"
+          :extensions="cmExtensions"
+          class="jf-cm-editor"
+        />
+        <div v-else-if="!activeParseResult.empty" class="jf-output-msg jf-msg-error">
+          JSON tidak valid — perbaiki input terlebih dahulu.
         </div>
-
-        <!-- Text view -->
-        <div v-else class="jf-output">
-          <pre v-if="activeTextOutput" class="jf-pre">{{ activeTextOutput }}</pre>
-          <div v-else class="jf-output-msg jf-msg-empty">Klik Minify untuk melihat output teks.</div>
+        <div v-else class="jf-output-msg jf-msg-empty">
+          Output akan muncul di sini ✨
         </div>
       </div>
     </div>
@@ -888,7 +868,36 @@ watch(activeTabId, saveToStorage);
   overflow: hidden;
   box-shadow: 7px 7px 0 var(--ink);
   background: white;
-  min-height: 480px;
+  height: calc(100vh - 160px);
+}
+
+.jf-cm-editor {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  font-family: 'Space Mono', 'Courier New', monospace;
+  font-size: 0.85rem;
+  background: transparent;
+  outline: none;
+}
+.jf-cm-editor :deep(.cm-editor) {
+  height: 100%;
+}
+.jf-cm-editor :deep(.cm-scroller) {
+  overflow: auto;
+}
+.jf-cm-editor :deep(.cm-content) {
+  padding: 12px 0;
+}
+.jf-cm-editor :deep(.cm-gutters) {
+  background: #f8f8f5;
+  border-right: 1.5px solid rgba(34,34,34,0.12);
+  color: #b0b0a8;
+}
+html.dark .jf-cm-editor :deep(.cm-gutters) {
+  background: #0f172a;
+  border-right: 1.5px solid #1e293b;
+  color: #64748b;
 }
 
 .jf-panel-header {

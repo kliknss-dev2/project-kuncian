@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, nextTick } from 'vue';
 import JsonTreeNode from './JsonTreeNode.vue'; // self-reference for recursion
 
 const props = defineProps({
@@ -11,9 +11,10 @@ const props = defineProps({
   diffMap:        { type: Object, default: () => ({}) },
   isLast:         { type: Boolean, default: true },
   isArrayChild:   { type: Boolean, default: false },
+  allowEdit:      { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['toggle']);
+const emit = defineEmits(['toggle', 'edit-node']);
 
 const isArr        = computed(() => Array.isArray(props.value));
 const isObj        = computed(() => props.value !== null && typeof props.value === 'object' && !isArr.value);
@@ -48,6 +49,53 @@ const INDENT_PX = 18;
 
 function toggle() { emit('toggle', props.path); }
 function forwardToggle(path) { emit('toggle', path); }
+
+const editingType = ref(null);
+const editInput = ref('');
+const editKeyInput = ref(null);
+const editValueInput = ref(null);
+
+function startEdit(type) {
+  if (!props.allowEdit) return;
+  if (type === 'key' && props.isArrayChild) return; // Cannot edit array index
+  
+  editingType.value = type;
+  if (type === 'key') {
+    editInput.value = props.nodeKey;
+    nextTick(() => editKeyInput.value?.focus());
+  } else {
+    editInput.value = typeof props.value === 'string' ? props.value : String(props.value);
+    nextTick(() => editValueInput.value?.focus());
+  }
+}
+
+function finishEdit() {
+  if (!editingType.value) return;
+  const type = editingType.value;
+  const val = editInput.value;
+  editingType.value = null; // reset state
+  
+  if (type === 'key') {
+    if (val === props.nodeKey) return;
+    emit('edit-node', { action: 'rename_key', pathArray: [props.nodeKey], newKey: val });
+  } else {
+    let parsedValue = val;
+    if (val === 'true') parsedValue = true;
+    else if (val === 'false') parsedValue = false;
+    else if (val === 'null') parsedValue = null;
+    else if (!isNaN(Number(val)) && val.trim() !== '') parsedValue = Number(val);
+    
+    if (parsedValue === props.value) return;
+    emit('edit-node', { action: 'change_value', pathArray: [props.nodeKey], newValue: parsedValue });
+  }
+}
+
+function forwardEditNode(payload) {
+  emit('edit-node', {
+    ...payload,
+    pathArray: props.nodeKey !== null ? [props.nodeKey, ...payload.pathArray] : payload.pathArray
+  });
+}
 
 function primitiveClass(v) {
   if (v === null)             return 'jt-null';
@@ -85,7 +133,10 @@ const diffClass = computed(() => ({
         </span>
         <template v-if="nodeKey !== null">
           <span v-if="isArrayChild" class="jt-index">{{ nodeKey }}</span>
-          <span v-else class="jt-key">"{{ nodeKey }}"</span>
+          <template v-else>
+            <input v-if="editingType === 'key'" ref="editKeyInput" v-model="editInput" class="jt-edit-input" @blur="finishEdit" @keyup.enter="finishEdit" @click.stop />
+            <span v-else class="jt-key" :class="{ 'jt-editable': allowEdit }" @dblclick.stop="startEdit('key')">"{{ nodeKey }}"</span>
+          </template>
           <span class="jt-punct">:&nbsp;</span>
         </template>
         <span class="jt-bracket">{{ openBracket }}</span>
@@ -110,7 +161,9 @@ const diffClass = computed(() => ({
           :diffMap="diffMap"
           :isLast="entry.isLast"
           :isArrayChild="entry.isArrayChild"
+          :allowEdit="allowEdit"
           @toggle="forwardToggle"
+          @edit-node="forwardEditNode"
         />
         <!-- Closing bracket row -->
         <div class="jt-row">
@@ -129,10 +182,16 @@ const diffClass = computed(() => ({
         <span class="jt-chevron-ph"></span>
         <template v-if="nodeKey !== null">
           <span v-if="isArrayChild" class="jt-index">{{ nodeKey }}</span>
-          <span v-else class="jt-key">"{{ nodeKey }}"</span>
+          <template v-else>
+            <input v-if="editingType === 'key'" ref="editKeyInput" v-model="editInput" class="jt-edit-input" @blur="finishEdit" @keyup.enter="finishEdit" @click.stop />
+            <span v-else class="jt-key" :class="{ 'jt-editable': allowEdit }" @dblclick.stop="startEdit('key')">"{{ nodeKey }}"</span>
+          </template>
           <span class="jt-punct">:&nbsp;</span>
         </template>
-        <span :class="primitiveClass(value)">{{ formatPrimitive(value) }}</span>
+        <template v-if="editingType === 'value'">
+          <input ref="editValueInput" v-model="editInput" class="jt-edit-input" @blur="finishEdit" @keyup.enter="finishEdit" @click.stop />
+        </template>
+        <span v-else :class="[primitiveClass(value), { 'jt-editable': allowEdit }]" @dblclick.stop="startEdit('value')">{{ formatPrimitive(value) }}</span>
         <span v-if="!isLast" class="jt-punct">,</span>
       </div>
     </template>
@@ -199,6 +258,23 @@ const diffClass = computed(() => ({
   border-left: 3px solid #f59e0b;
   padding-left: 1px;
 }
+
+/* ── Inline Edit ── */
+.jt-editable { cursor: text; border-radius: 2px; }
+.jt-editable:hover { outline: 1px dashed #cbd5e1; outline-offset: 1px; }
+.jt-edit-input {
+  background: white;
+  border: 1px solid #3b82f6;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0 4px;
+  color: var(--ink);
+  outline: none;
+  min-width: 60px;
+}
+html.dark .jt-edit-input { background: #1e293b; color: #f8fafc; border-color: #6366f1; }
+html.dark .jt-editable:hover { outline-color: #475569; }
 
 /* ── Dark mode ── */
 html.dark .jt-clickable:hover { background: rgba(255,255,255,0.06); }
