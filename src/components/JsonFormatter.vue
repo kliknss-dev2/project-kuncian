@@ -88,8 +88,22 @@ const parsedByTab = computed(() => {
 const activeParseResult = computed(() =>
   parsedByTab.value[activeTabId.value] ?? { ok: false, empty: true, data: null, error: '' }
 );
+
+const formattedParseResult = computed(() => {
+  const raw = textOutputByTab.value[activeTabId.value]?.trim();
+  if (!raw) return { ok: false, empty: true, error: '' };
+  try {
+    JSON.parse(raw);
+    return { ok: true, empty: false, error: '' };
+  } catch(e) {
+    return { ok: false, empty: false, error: e.message };
+  }
+});
 const activeOutputMode  = computed(() => outputModeByTab.value[activeTabId.value] ?? 'tree');
-const activeTextOutput  = computed(() => textOutputByTab.value[activeTabId.value] ?? '');
+const activeTextOutput = computed({
+  get: () => textOutputByTab.value[activeTabId.value] ?? '',
+  set: (v) => setTextOutput(activeTabId.value, v)
+});
 const activeCollapsed   = computed(() => collapsedByTab.value[activeTabId.value] ?? []);
 
 // v-model-compatible computed for active tab's input
@@ -522,22 +536,36 @@ watch(activeTabId, saveToStorage);
         <div class="jf-panel-header">
           <span class="jf-panel-label">Formatted Output</span>
           <div class="jf-output-tabs" style="margin-left: auto;">
-            <span v-if="activeParseResult.ok" class="jf-badge jf-badge-ok">✓ Valid</span>
-            <span v-else-if="!activeParseResult.empty" class="jf-badge jf-badge-err">✗ Invalid</span>
+            <span v-if="formattedParseResult.ok" class="jf-badge jf-badge-ok">✓ Valid</span>
+            <span v-else-if="!formattedParseResult.empty" class="jf-badge jf-badge-err">✗ Invalid</span>
           </div>
         </div>
         
         <Codemirror
-          v-if="activeParseResult.ok"
+          v-if="activeTextOutput"
           v-model="activeTextOutput"
           :extensions="cmExtensions"
           class="jf-cm-editor"
         />
-        <div v-else-if="!activeParseResult.empty" class="jf-output-msg jf-msg-error">
+        <div v-else-if="!activeParseResult.empty && !activeParseResult.ok" class="jf-output-msg jf-msg-error">
           JSON tidak valid — perbaiki input terlebih dahulu.
         </div>
         <div v-else class="jf-output-msg jf-msg-empty">
           Output akan muncul di sini ✨
+        </div>
+
+        <!-- Status bar -->
+        <div class="jf-status-bar" v-if="activeTextOutput">
+          <div v-if="formattedParseResult.error" class="jf-status-error">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span class="jf-status-errmsg">{{ formattedParseResult.error }}</span>
+          </div>
+          <div v-else-if="formattedParseResult.ok" class="jf-status-ok">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            JSON valid
+          </div>
         </div>
       </div>
     </div>
@@ -607,13 +635,14 @@ watch(activeTabId, saveToStorage);
 <style scoped>
 /* ── Root ─────────────────────────────────────────────────── */
 .jf-root {
-  min-height: 100vh;
-  padding: 1.25rem 1.25rem 3rem;
+  height: 100vh;
+  padding: 1.25rem 1.25rem;
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+  overflow: hidden;
 }
 
 /* ── Topbar ───────────────────────────────────────────────── */
@@ -642,6 +671,7 @@ watch(activeTabId, saveToStorage);
   display: flex;
   align-items: center;
   gap: 0.9rem;
+  flex-shrink: 0;
 }
 .jf-emoji-wrap {
   width: 50px;
@@ -676,6 +706,7 @@ watch(activeTabId, saveToStorage);
   gap: 0.5rem;
   border-bottom: 2px solid var(--ink);
   padding-bottom: 0.5rem;
+  flex-shrink: 0;
 }
 
 .jf-tablist {
@@ -813,6 +844,7 @@ watch(activeTabId, saveToStorage);
   border: 2px solid var(--ink);
   border-radius: 12px;
   box-shadow: 4px 4px 0 var(--ink);
+  flex-shrink: 0;
 }
 .jf-compare-selects {
   display: flex;
@@ -849,6 +881,7 @@ watch(activeTabId, saveToStorage);
   grid-template-columns: 1fr auto 1fr;
   gap: 1rem;
   flex: 1;
+  min-height: 0;
 }
 
 /* ── Compare Editor ───────────────────────────────────────── */
@@ -861,6 +894,8 @@ watch(activeTabId, saveToStorage);
 
 /* ── Panels ───────────────────────────────────────────────── */
 .jf-panel {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   border: 2.5px solid var(--ink);
@@ -868,22 +903,28 @@ watch(activeTabId, saveToStorage);
   overflow: hidden;
   box-shadow: 7px 7px 0 var(--ink);
   background: white;
-  height: calc(100vh - 160px);
+  height: 100%;
 }
 
 .jf-cm-editor {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   font-family: 'Space Mono', 'Courier New', monospace;
   font-size: 0.85rem;
   background: transparent;
   outline: none;
 }
 .jf-cm-editor :deep(.cm-editor) {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .jf-cm-editor :deep(.cm-scroller) {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
 }
 .jf-cm-editor :deep(.cm-content) {
