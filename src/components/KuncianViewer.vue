@@ -479,7 +479,7 @@ onUnmounted(() => {
           />
         </label>
 
-        <div class="mt-5 max-h-[68vh] space-y-3 overflow-auto pr-1">
+        <div class="mt-5 max-h-[68vh] space-y-3 overflow-auto pr-1 pb-2">
           <button
             v-for="topic in filteredTopics"
             :key="topic.name"
