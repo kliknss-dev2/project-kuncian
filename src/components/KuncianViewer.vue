@@ -1,9 +1,12 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import ocrIndex from '../generated/ocr-index.json';
+
 
 const library = ref(null);
-const activeTopicName = ref(null); // null = belum pilih topik (tampilkan picker)
+const activeTopicName = ref(null);
 const query = ref('');
+const imageQuery = ref('');   // search teks di dalam gambar (OCR)
 const selectedImage = ref(null);
 const loading = ref(true);
 const error = ref('');
@@ -60,7 +63,17 @@ const activeTopic = computed(() => {
 // true = mode picker (belum pilih topik), false = mode viewer
 const isPickerMode = computed(() => activeTopicName.value === null);
 
-const filteredImages = computed(() => imageFiles.value);
+const filteredImages = computed(() => {
+  const kw = imageQuery.value.trim().toLowerCase();
+  if (!kw) return imageFiles.value;
+
+  return imageFiles.value.filter((file) => {
+    // Key in ocrIndex is: "TopicName/filename.ext"
+    const key = `${activeTopic.value?.name ?? ''}/${file.name}`;
+    const text = ocrIndex[key] ?? '';
+    return text.includes(kw) || file.name.toLowerCase().includes(kw);
+  });
+});
 const filteredDocuments = computed(() => documentFiles.value);
 
 const selectedImageIndex = computed(() => {
@@ -100,6 +113,7 @@ const stats = computed(() => {
 function setActiveTopic(topicName) {
   activeTopicName.value = topicName;
   selectedImage.value = null;
+  imageQuery.value = '';  // reset image search saat ganti topik
 
   const url = new URL(window.location);
   url.searchParams.set('q', topicName);
@@ -552,7 +566,27 @@ onUnmounted(() => {
             <div v-for="item in 6" :key="item" class="h-64 animate-pulse rounded-2xl border-2 border-[#222] dark:border-slate-700 bg-white dark:bg-slate-700 shadow-saw-sm dark:shadow-[5px_5px_0_#000]"></div>
           </div>
 
-          <div v-else class="py-6">
+          <div v-else class="py-4">
+            <!-- Image text search bar -->
+            <div class="mb-4 flex items-center gap-2 rounded-xl border-2 border-[#222] dark:border-black bg-[#fffdf8] dark:bg-slate-700 px-4 py-2.5 shadow-saw-sm dark:shadow-[3px_3px_0_#000]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-slate-400">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+              </svg>
+              <input
+                v-model="imageQuery"
+                type="search"
+                placeholder="Cari teks di dalam gambar..."
+                class="w-full bg-transparent font-monoish text-sm font-bold text-[#222] dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              />
+              <span v-if="imageQuery" class="shrink-0 rounded-full bg-[#9bd7e5] dark:bg-slate-600 border-2 border-[#222] dark:border-black px-2 py-0.5 font-monoish text-xs font-bold text-[#111] dark:text-white">
+                {{ filteredImages.length }} hasil
+              </span>
+              <span v-else class="shrink-0 rounded-full bg-[#eef8f5] dark:bg-slate-600 border border-[#ccc] dark:border-black px-2 py-0.5 font-monoish text-xs text-slate-400 dark:text-slate-400 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+                OCR
+              </span>
+            </div>
+
             <div v-if="filteredImages.length > 0" class="grid gap-3 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4">
               <button
                 v-for="file in filteredImages"
@@ -577,7 +611,10 @@ onUnmounted(() => {
             </div>
 
             <div v-else class="rounded-2xl border-2 border-[#222] dark:border-black bg-[#eef8f5] dark:bg-slate-700 p-8 text-center font-monoish text-slate-600 dark:text-slate-300 shadow-saw-sm dark:shadow-[5px_5px_0_#000]">
-              Belum ada gambar di topik ini.
+              <span v-if="imageQuery">
+                Tidak ada gambar yang mengandung teks "<strong>{{ imageQuery }}</strong>". Coba kata kunci lain.
+              </span>
+              <span v-else>Belum ada gambar di topik ini.</span>
             </div>
           </div>
         </div>
