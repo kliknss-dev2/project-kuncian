@@ -384,10 +384,10 @@ onUnmounted(() => {
         kuncian.lo
       </p>
       <h1 class="mx-auto mt-6 max-w-3xl font-display text-3xl font-black leading-tight tracking-[-0.04em] text-[#111] dark:text-slate-100 sm:text-5xl">
-        Jembatan cepat menuju pulang cepat!
+        Solusi singkat menuju pulang cepat!
       </h1>
       <p class="mx-auto mt-4 max-w-2xl font-monoish text-sm leading-7 text-slate-700 dark:text-slate-400 sm:text-base">
-        Kerjaan banyak? Mau pulang cepat, tapi ada kuncian? Tenang, kini hadir kuncian.lo! 😎
+        Kerjaan banyak? Mau pulang cepat, tapi ada kuncian? Tenang... kini hadir kuncian.lo! 😎
       </p>
 
       <div class="mt-7 flex flex-wrap justify-center gap-4">
