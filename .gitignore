@@ -1,5 +1,6 @@
 node_modules/
 src/generated/
+!src/generated/ocr-index.json
 dist/
 .astro/
 .env
@@ -7,3 +8,4 @@ dist/
 npm-debug.log*
 .idea/
 .netlify/
+*.traineddata
