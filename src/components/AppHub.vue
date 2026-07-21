@@ -40,6 +40,16 @@ const apps = [
     accentLight: 'rgba(155,215,229,0.22)',
     tag: 'Dev Tool',
   },
+  {
+    id: 'lorem-ipsum',
+    name: 'Lorem Ipsum',
+    description: 'Generate teks placeholder berdasarkan jumlah kata, kalimat, atau paragraf. Tinggal pilih, generate, dan copy!',
+    href: '/lorem-ipsum',
+    emoji: '✍️',
+    accent: '#c9b6ea',
+    accentLight: 'rgba(201,182,234,0.22)',
+    tag: 'Utilitas',
+  },
 ];
 </script>
 

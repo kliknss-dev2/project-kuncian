@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LoremGenerator from '../components/LoremGenerator.vue';
+---
+
+<BaseLayout title="Lorem Ipsum Generator — kotak.lo" description="Generate teks placeholder lorem ipsum berdasarkan jumlah kata, kalimat, atau paragraf sesuai kebutuhan.">
+  <LoremGenerator client:only="vue" />
+</BaseLayout>
