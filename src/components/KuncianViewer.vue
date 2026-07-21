@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 const library = ref(null);
-const activeTopicName = ref('');
+const activeTopicName = ref(null); // null = belum pilih topik (tampilkan picker)
 const query = ref('');
 const selectedImage = ref(null);
 const loading = ref(true);
@@ -51,12 +51,14 @@ const filteredTopics = computed(() => {
 });
 
 const activeTopic = computed(() => {
-  if (!library.value) {
+  if (!library.value || activeTopicName.value === null) {
     return null;
   }
-
-  return filteredTopics.value.find((topic) => topic.name === activeTopicName.value) || filteredTopics.value[0] || library.value.topics[0];
+  return filteredTopics.value.find((topic) => topic.name === activeTopicName.value) || null;
 });
+
+// true = mode picker (belum pilih topik), false = mode viewer
+const isPickerMode = computed(() => activeTopicName.value === null);
 
 const filteredImages = computed(() => imageFiles.value);
 const filteredDocuments = computed(() => documentFiles.value);
@@ -101,6 +103,16 @@ function setActiveTopic(topicName) {
 
   const url = new URL(window.location);
   url.searchParams.set('q', topicName);
+  window.history.pushState({}, '', url);
+}
+
+function backToPicker() {
+  activeTopicName.value = null;
+  selectedImage.value = null;
+  query.value = '';
+
+  const url = new URL(window.location);
+  url.searchParams.delete('q');
   window.history.pushState({}, '', url);
 }
 
@@ -180,14 +192,14 @@ async function loadLibrary() {
     const q = urlParams.get('q');
 
     if (q && library.value.topics.some((t) => t.name === q)) {
+      // URL sudah mengandung topik — langsung masuk viewer
       activeTopicName.value = q;
     } else {
-      activeTopicName.value = library.value.topics[0]?.name || '';
-      if (activeTopicName.value) {
-        const url = new URL(window.location);
-        url.searchParams.set('q', activeTopicName.value);
-        window.history.replaceState({}, '', url);
-      }
+      // Tidak ada query → tampilkan picker, bersihkan URL
+      activeTopicName.value = null;
+      const url = new URL(window.location);
+      url.searchParams.delete('q');
+      window.history.replaceState({}, '', url);
     }
   } catch (loadError) {
     error.value = loadError.message;
@@ -201,6 +213,10 @@ function handlePopState() {
   const q = urlParams.get('q');
   if (q && library.value?.topics.some((t) => t.name === q)) {
     activeTopicName.value = q;
+    selectedImage.value = null;
+  } else {
+    // Tombol back browser → kembali ke picker
+    activeTopicName.value = null;
     selectedImage.value = null;
   }
 }
@@ -317,9 +333,10 @@ onUnmounted(() => {
 
 <template>
   <section class="saw-dots mx-auto flex w-full max-w-7xl flex-col gap-7 rounded-[2rem] px-1 py-3 sm:px-3">
-    <!-- Back button -->
+    <!-- Back button: ke home jika picker, ke picker jika viewer -->
     <div class="flex justify-start px-4 sm:px-6">
       <a
+        v-if="isPickerMode"
         href="/"
         class="kv-back-btn"
         aria-label="Kembali ke halaman utama"
@@ -329,6 +346,17 @@ onUnmounted(() => {
         </svg>
         Kembali
       </a>
+      <button
+        v-else
+        class="kv-back-btn"
+        aria-label="Kembali ke daftar topik"
+        @click="backToPicker"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        Semua Topik
+      </button>
     </div>
 
     <header class="relative overflow-hidden rounded-[2rem] px-2 pb-2 pt-3 text-center sm:px-5">
@@ -373,10 +401,76 @@ onUnmounted(() => {
       {{ error }}
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+    <!-- ══ PICKER MODE: Tampilkan grid semua topik ══ -->
+    <div v-if="isPickerMode">
+
+      <!-- Search bar -->
+      <div class="mx-auto max-w-2xl px-2">
+        <label class="block">
+          <span class="mb-2 block font-monoish text-sm font-bold text-[#222] dark:text-slate-200">Cari topik</span>
+          <input
+            v-model="query"
+            class="saw-input w-full px-4 py-3 font-monoish text-sm font-bold text-[#222] dark:text-white dark:bg-slate-700 dark:border-black outline-none transition focus:bg-[#fff3c4] dark:focus:bg-slate-600"
+            placeholder="Contoh: cuti, absensi..."
+            type="search"
+          />
+        </label>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div v-if="loading" class="mt-6 grid gap-4 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div v-for="n in 8" :key="n" class="h-36 animate-pulse rounded-2xl border-2 border-[#222] dark:border-slate-700 bg-white dark:bg-slate-700 shadow-saw-sm"></div>
+      </div>
+
+      <!-- Topic card grid -->
+      <div v-else class="mt-4 grid gap-4 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <button
+          v-for="topic in filteredTopics"
+          :key="topic.name"
+          class="kv-topic-card group text-left"
+          type="button"
+          @click="setActiveTopic(topic.name)"
+        >
+          <!-- Badge row -->
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div class="flex items-center gap-1.5">
+              <span v-if="isTopicNew(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#f5a6b4] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black leading-none">New</span>
+              <span v-else-if="isTopicUpdated(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#9bd7e5] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black leading-none">Update</span>
+              <span v-if="favorites.includes(topic.name)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f6bd4f" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </span>
+            </div>
+            <span class="rounded-full border-2 border-[#222] dark:border-black bg-[#9bd7e5] dark:bg-slate-600 px-2.5 py-0.5 font-monoish text-xs font-bold text-[#111] dark:text-white">
+              {{ topic.total }}
+            </span>
+          </div>
+
+          <!-- Topic name -->
+          <p class="text-sm font-black leading-snug text-[#111] dark:text-white line-clamp-2 flex-1" v-html="highlight(topic.name)"></p>
+
+          <!-- Meta -->
+          <p class="mt-2 font-monoish text-xs text-slate-500 dark:text-slate-400">
+            {{ topic.images }} gambar · {{ topic.documents }} dokumen
+          </p>
+
+          <!-- Arrow CTA -->
+          <div class="mt-3 flex items-center gap-1 font-monoish text-xs font-bold text-[#111] dark:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+            Buka
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </button>
+
+        <div v-if="filteredTopics.length === 0" class="col-span-full rounded-xl border-2 border-[#222] dark:border-black bg-white dark:bg-slate-700 p-6 text-center font-monoish text-sm text-slate-600 dark:text-slate-300 shadow-saw-sm">
+          Tidak ada topik yang cocok dengan pencarian.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEWER MODE: Sidebar + konten topik ══ -->
+    <div v-else class="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
       <aside id="daftar-topik" class="saw-card-soft dark:bg-slate-800 dark:border-black dark:shadow-[5px_5px_0_#000] h-fit p-4 lg:sticky lg:top-5">
         <label class="block">
-          <span class="mb-2 block font-monoish text-sm font-bold text-[#222] dark:text-slate-200">Cari topik atau file</span>
+          <span class="mb-2 block font-monoish text-sm font-bold text-[#222] dark:text-slate-200">Cari topik</span>
           <input
             v-model="query"
             class="saw-input w-full px-4 py-3 font-monoish text-sm font-bold text-[#222] dark:text-white dark:bg-slate-700 dark:border-black outline-none transition focus:bg-[#fff3c4] dark:focus:bg-slate-600"
@@ -390,7 +484,7 @@ onUnmounted(() => {
             v-for="topic in filteredTopics"
             :key="topic.name"
             class="group flex w-full items-center justify-between border-2 border-[#222] dark:border-black px-4 py-3 text-left transition"
-            :class="activeTopic?.name === topic.name ? 'translate-x-[3px] translate-y-[3px] rounded-xl bg-[#f6bd4f]  shadow-pressed dark:shadow-[3px_3px_0_#000]' : 'rounded-xl bg-white dark:bg-slate-700 shadow-saw-sm dark:shadow-[5px_5px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed'"
+            :class="activeTopic?.name === topic.name ? 'translate-x-[3px] translate-y-[3px] rounded-xl bg-[#f6bd4f] shadow-pressed dark:shadow-[3px_3px_0_#000]' : 'rounded-xl bg-white dark:bg-slate-700 shadow-saw-sm dark:shadow-[5px_5px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-pressed'"
             type="button"
             @click="setActiveTopic(topic.name)"
           >
@@ -431,7 +525,7 @@ onUnmounted(() => {
               <p class="font-monoish text-sm font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Topik aktif</p>
               <div class="flex items-center gap-3 mt-1">
                 <h2 class="font-display text-3xl font-black tracking-[-0.04em] text-[#111] dark:text-white sm:text-4xl truncate">
-                  {{ activeTopic?.name || 'Memuat data...' }}
+                  {{ activeTopic?.name || 'Pilih topik...' }}
                 </h2>
                 <button 
                   v-if="activeTopic" 
@@ -483,7 +577,7 @@ onUnmounted(() => {
             </div>
 
             <div v-else class="rounded-2xl border-2 border-[#222] dark:border-black bg-[#eef8f5] dark:bg-slate-700 p-8 text-center font-monoish text-slate-600 dark:text-slate-300 shadow-saw-sm dark:shadow-[5px_5px_0_#000]">
-              Belum ada gambar yang cocok di topik ini.
+              Belum ada gambar di topik ini.
             </div>
           </div>
         </div>
@@ -639,5 +733,32 @@ html.dark .kv-back-btn {
 }
 html.dark .kv-back-btn:hover {
   box-shadow: 1px 1px 0 #000;
+}
+
+.kv-topic-card {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  padding: 1rem 1.1rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+.kv-topic-card:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 var(--ink);
+  background: rgba(246, 189, 79, 0.12);
+}
+html.dark .kv-topic-card {
+  background: #1e293b;
+  border-color: #000;
+  box-shadow: 5px 5px 0 #000;
+  color: #f8fafc;
+}
+html.dark .kv-topic-card:hover {
+  background: rgba(246, 189, 79, 0.08);
+  box-shadow: 3px 3px 0 #000;
 }
 </style>
