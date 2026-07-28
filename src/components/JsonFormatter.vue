@@ -890,6 +890,7 @@ watch(activeTabId, saveToStorage);
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   flex: 1;
+  min-height: 0;
 }
 
 /* ── Panels ───────────────────────────────────────────────── */
@@ -1291,6 +1292,11 @@ html.dark .jf-tree-numbered :deep(.jt-row)::before {
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 960px) {
+  .jf-root {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
   .jf-editor {
     grid-template-columns: 1fr;
   }

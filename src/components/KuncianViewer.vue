@@ -390,14 +390,6 @@ onUnmounted(() => {
         Kerjaan banyak? Mau pulang cepat, tapi ada kuncian? Tenang... kini hadir kuncian.lo! 😎
       </p>
 
-      <div class="mt-7 flex flex-wrap justify-center gap-4">
-        <button @click="scrollToId('daftar-topik')" class="saw-button bg-[#9bd7e5] px-7 py-3 font-monoish text-lg font-bold text-[#111] dark:border-black dark:shadow-[5px_5px_0_#000]">
-          Lihat topik
-        </button>
-        <button @click="scrollToId('dokumen-panel')" class="saw-button bg-[#f6bd4f] px-7 py-3 font-monoish text-lg font-bold text-[#111] dark:border-black dark:shadow-[5px_5px_0_#000]">
-          Dokumen
-        </button>
-      </div>
     </header>
 
     <div class="mx-auto grid w-full max-w-4xl grid-cols-3 gap-3 px-2">
@@ -482,7 +474,7 @@ onUnmounted(() => {
 
     <!-- ══ VIEWER MODE: Sidebar + konten topik ══ -->
     <div v-else class="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside id="daftar-topik" class="saw-card-soft dark:bg-slate-800 dark:border-black dark:shadow-[5px_5px_0_#000] h-fit p-4 lg:sticky lg:top-5">
+      <aside id="daftar-topik" class="hidden lg:block saw-card-soft dark:bg-slate-800 dark:border-black dark:shadow-[5px_5px_0_#000] h-fit p-4 lg:sticky lg:top-5">
         <label class="block">
           <span class="mb-2 block font-monoish text-sm font-bold text-[#222] dark:text-slate-200">Cari topik</span>
           <input
@@ -508,12 +500,18 @@ onUnmounted(() => {
                 <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 hover:text-yellow-500 dark:hover:text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </button>
               <span class="min-w-0 flex-1">
-                <span class="flex flex-wrap items-center gap-1.5 text-sm font-black leading-tight text-[#111] dark:text-white">
+                <span 
+                  class="flex flex-wrap items-center gap-1.5 text-sm font-black leading-tight"
+                  :class="activeTopic?.name === topic.name ? 'text-[#111]' : 'text-[#111] dark:text-white'"
+                >
                   <span class="truncate" v-html="highlight(topic.name)"></span>
                   <span v-if="isTopicNew(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#f5a6b4] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black shrink-0 leading-none shadow-saw-sm">New</span>
                   <span v-else-if="isTopicUpdated(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#9bd7e5] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black shrink-0 leading-none shadow-saw-sm">Update</span>
                 </span>
-                <span class="mt-1.5 block font-monoish text-xs text-slate-600 dark:text-slate-400">
+                <span 
+                  class="mt-1.5 block font-monoish text-xs"
+                  :class="activeTopic?.name === topic.name ? 'text-slate-700' : 'text-slate-600 dark:text-slate-400'"
+                >
                   {{ topic.images }} gambar · {{ topic.documents }} dokumen
                 </span>
               </span>
@@ -537,7 +535,7 @@ onUnmounted(() => {
           <div class="flex flex-col gap-3 border-b-2 border-[#222] dark:border-slate-700 pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div class="min-w-0 flex-1">
               <p class="font-monoish text-sm font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Topik aktif</p>
-              <div class="flex items-center gap-3 mt-1">
+              <div class="flex items-center gap-3 mt-1 min-w-0">
                 <h2 class="font-display text-3xl font-black tracking-[-0.04em] text-[#111] dark:text-white sm:text-4xl truncate">
                   {{ activeTopic?.name || 'Pilih topik...' }}
                 </h2>
