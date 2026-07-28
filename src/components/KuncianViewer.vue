@@ -495,7 +495,7 @@ onUnmounted(() => {
             @click="setActiveTopic(topic.name)"
           >
             <div class="flex items-start gap-3 min-w-0">
-              <button @click="(e) => toggleFavorite(topic.name, e)" class="mt-0.5 shrink-0 transition-colors" aria-label="Pin Topic">
+              <button v-if="false" @click="(e) => toggleFavorite(topic.name, e)" class="mt-0.5 shrink-0 transition-colors" aria-label="Pin Topic">
                 <svg v-if="favorites.includes(topic.name)" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#f6bd4f" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:stroke-white dark:fill-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 hover:text-yellow-500 dark:hover:text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </button>
@@ -509,6 +509,7 @@ onUnmounted(() => {
                   <span v-else-if="isTopicUpdated(topic)" class="text-[9px] uppercase tracking-wider font-bold bg-[#9bd7e5] text-[#111] px-1.5 py-0.5 rounded border border-[#222] dark:border-black shrink-0 leading-none shadow-saw-sm">Update</span>
                 </span>
                 <span 
+                  v-if="false"
                   class="mt-1.5 block font-monoish text-xs"
                   :class="activeTopic?.name === topic.name ? 'text-slate-700' : 'text-slate-600 dark:text-slate-400'"
                 >
@@ -517,8 +518,9 @@ onUnmounted(() => {
               </span>
             </div>
             <span
-              class="rounded-full border-2 border-[#222] dark:border-black px-3 py-1 font-monoish text-xs font-bold shrink-0 ml-2"
-              :class="activeTopic?.name === topic.name ? 'bg-white dark:bg-slate-800 text-[#111] dark:text-white' : 'bg-[#9bd7e5] dark:bg-slate-600 text-[#111] dark:text-white group-hover:bg-[#f5a6b4] dark:group-hover:bg-slate-500'"
+                v-if="false"
+                class="rounded-full border-2 border-[#222] dark:border-black px-3 py-1 font-monoish text-xs font-bold shrink-0 ml-2"
+                :class="activeTopic?.name === topic.name ? 'bg-white dark:bg-slate-800 text-[#111] dark:text-white' : 'bg-[#9bd7e5] dark:bg-slate-600 text-[#111] dark:text-white group-hover:bg-[#f5a6b4] dark:group-hover:bg-slate-500'"
             >
               {{ topic.total }}
             </span>
@@ -552,7 +554,7 @@ onUnmounted(() => {
             </div>
 
             <button
-              v-if="activeTopic"
+              v-if="false"
               class="saw-button inline-flex shrink-0 items-center justify-center bg-[#f5a6b4] px-5 py-3 font-monoish text-sm font-bold text-[#111] dark:border-black dark:shadow-[5px_5px_0_#000]"
               @click="scrollToId('dokumen-panel')"
             >
@@ -618,7 +620,7 @@ onUnmounted(() => {
         </div>
 
         <div
-          v-if="activeTopic"
+          v-if="false"
           class="saw-card mt-6 bg-[#eef8f5] dark:bg-slate-800 dark:border-black dark:shadow-[5px_5px_0_#000] p-4 sm:p-6"
         >
           <div id="dokumen-panel" class="mb-4 flex items-center justify-between gap-3">
