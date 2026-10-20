@@ -1,16 +1,22 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 // ── Dark mode sync ──────────────────────────────────────────
 const isDarkMode = ref(false);
+let themeObserver = null;
+let copyTimer = null;
 onMounted(() => {
   if (typeof document !== 'undefined') {
     isDarkMode.value = document.documentElement.classList.contains('dark');
-    const observer = new MutationObserver(() => {
+    themeObserver = new MutationObserver(() => {
       isDarkMode.value = document.documentElement.classList.contains('dark');
     });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
+});
+onUnmounted(() => {
+  themeObserver?.disconnect();
+  clearTimeout(copyTimer);
 });
 
 // ── Lorem ipsum data ────────────────────────────────────────
@@ -54,6 +60,7 @@ const mode   = ref('paragraf');  // 'kata' | 'kalimat' | 'paragraf'
 const count  = ref(3);
 const output = ref('');
 const copySuccess = ref(false);
+const copyFailed = ref(false);
 const hasGenerated = ref(false);
 
 const modeOptions = [
@@ -70,6 +77,26 @@ const countLabel = computed(() => {
 const maxCount = computed(() => {
   return { kata: 1000, kalimat: 200, paragraf: 50 }[mode.value];
 });
+
+// count bisa berupa '' / NaN / desimal saat user mengetik bebas
+const safeCount = computed(() => {
+  const n = Math.floor(Number(count.value));
+  return Number.isFinite(n) ? n : 0;
+});
+
+const countHint = computed(() => {
+  if (count.value === '' || count.value === null) return '';
+  if (safeCount.value > maxCount.value) return `Maksimal ${maxCount.value} ${countLabel.value} — nanti otomatis disesuaikan.`;
+  if (safeCount.value < 1) return `Minimal 1 ${countLabel.value}.`;
+  return '';
+});
+
+function clampCount() {
+  count.value = Math.max(1, Math.min(safeCount.value || 1, maxCount.value));
+}
+
+// Ganti tipe (mis. kata → paragraf) jangan sampai jumlah lama melebihi batas tipe baru
+watch(mode, clampCount);
 
 // ── Core logic ──────────────────────────────────────────────
 function generate() {
@@ -89,23 +116,40 @@ function generate() {
   copySuccess.value = false;
 }
 
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch {
+    copied = false;
+  }
+  document.body.removeChild(ta);
+  return copied;
+}
+
 async function copyOutput() {
   if (!output.value) return;
+  let copied = false;
   try {
     await navigator.clipboard.writeText(output.value);
-    copySuccess.value = true;
-    setTimeout(() => { copySuccess.value = false; }, 2200);
+    copied = true;
   } catch {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = output.value;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    copySuccess.value = true;
-    setTimeout(() => { copySuccess.value = false; }, 2200);
+    copied = fallbackCopy(output.value);
   }
+  clearTimeout(copyTimer);
+  copyFailed.value = !copied;
+  copySuccess.value = copied;
+  copyTimer = setTimeout(() => {
+    copySuccess.value = false;
+    copyFailed.value = false;
+  }, 2200);
 }
 
 const wordCount = computed(() => {
@@ -124,7 +168,7 @@ generate();
 
     <!-- ── Topbar ── -->
     <div class="lg-topbar">
-      <a href="/" class="lg-back-btn">
+      <a href="/" class="saw-back-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
@@ -147,15 +191,17 @@ generate();
       <!-- Mode selector -->
       <div class="lg-control-group">
         <label class="lg-ctrl-label">Tipe</label>
-        <div class="lg-mode-btns">
+        <div class="lg-mode-btns" role="group" aria-label="Tipe teks">
           <button
             v-for="opt in modeOptions"
             :key="opt.value"
+            type="button"
             class="lg-mode-btn"
             :class="{ active: mode === opt.value }"
+            :aria-pressed="mode === opt.value"
             @click="mode = opt.value"
           >
-            <span>{{ opt.icon }}</span>
+            <span aria-hidden="true">{{ opt.icon }}</span>
             {{ opt.label }}
           </button>
         </div>
@@ -165,22 +211,39 @@ generate();
       <div class="lg-control-group">
         <label class="lg-ctrl-label" for="lg-count-input">Jumlah {{ countLabel }}</label>
         <div class="lg-count-wrap">
-          <button class="lg-count-btn" @click="count = Math.max(1, count - 1)">−</button>
+          <button
+            type="button"
+            class="lg-count-btn"
+            :aria-label="`Kurangi jumlah ${countLabel}`"
+            :disabled="safeCount <= 1"
+            @click="count = Math.max(1, safeCount - 1)"
+          >−</button>
           <input
             id="lg-count-input"
             v-model.number="count"
             type="number"
+            inputmode="numeric"
             :min="1"
             :max="maxCount"
             class="lg-count-input"
+            :aria-describedby="countHint ? 'lg-count-hint' : undefined"
+            @keydown.enter="generate"
+            @blur="clampCount"
           />
-          <button class="lg-count-btn" @click="count = Math.min(maxCount, count + 1)">+</button>
+          <button
+            type="button"
+            class="lg-count-btn"
+            :aria-label="`Tambah jumlah ${countLabel}`"
+            :disabled="safeCount >= maxCount"
+            @click="count = Math.min(maxCount, safeCount + 1)"
+          >+</button>
         </div>
+        <p v-if="countHint" id="lg-count-hint" class="lg-count-hint" aria-live="polite">{{ countHint }}</p>
       </div>
 
       <!-- Generate button -->
       <div class="lg-control-group lg-generate-wrap">
-        <button id="lg-btn-generate" class="lg-gen-btn" @click="generate">
+        <button id="lg-btn-generate" type="button" class="lg-gen-btn" @click="generate">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
           </svg>
@@ -200,8 +263,9 @@ generate();
         </div>
         <button
           id="lg-btn-copy"
+          type="button"
           class="lg-copy-btn"
-          :class="{ success: copySuccess }"
+          :class="{ success: copySuccess, failed: copyFailed }"
           @click="copyOutput"
         >
           <svg v-if="!copySuccess" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
@@ -210,7 +274,7 @@ generate();
           <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          {{ copySuccess ? 'Tersalin!' : 'Copy' }}
+          <span aria-live="polite">{{ copySuccess ? 'Tersalin!' : copyFailed ? 'Gagal, salin manual' : 'Copy' }}</span>
         </button>
       </div>
 
@@ -243,31 +307,6 @@ generate();
 .lg-topbar {
   display: flex;
   align-items: center;
-}
-.lg-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: var(--ink);
-  text-decoration: none;
-  background: white;
-  border: 2px solid var(--ink);
-  border-radius: 9px;
-  padding: 0.32em 0.8em;
-  box-shadow: 3px 3px 0 var(--ink);
-  transition: transform 130ms ease, box-shadow 130ms ease;
-}
-.lg-back-btn:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
-}
-html.dark .lg-back-btn {
-  background: #1e293b;
-  color: #f8fafc;
-  border-color: #020617;
-  box-shadow: 3px 3px 0 #020617;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -391,6 +430,28 @@ html.dark .lg-mode-btn.active {
 html.dark .lg-count-wrap {
   border-color: #020617;
   box-shadow: 3px 3px 0 #020617;
+}
+/* overflow:hidden clips child outlines, so focus is drawn inside the segments */
+.lg-count-btn:focus-visible {
+  outline: 3px solid #f6bd4f;
+  outline-offset: -5px;
+}
+.lg-count-input:focus,
+.lg-count-input:focus-visible {
+  outline: none;
+  background: #fff3c4;
+}
+html.dark .lg-count-input:focus,
+html.dark .lg-count-input:focus-visible {
+  background: #475569;
+}
+.lg-count-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+/* iOS Safari zooms into inputs under 16px */
+@media (max-width: 639px) {
+  .lg-count-input { font-size: 1rem; }
 }
 .lg-count-btn {
   width: 36px;
@@ -551,6 +612,25 @@ html.dark .lg-copy-btn {
 html.dark .lg-copy-btn.success {
   background: #064e3b;
 }
+.lg-copy-btn.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+html.dark .lg-copy-btn.failed {
+  background: #450a0a;
+  color: #fecaca;
+}
+
+.lg-count-hint {
+  margin: 0;
+  max-width: 220px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #92400e;
+}
+html.dark .lg-count-hint {
+  color: #fcd34d;
+}
 
 /* Output text body */
 .lg-output-body {
@@ -568,7 +648,9 @@ html.dark .lg-output-body {
 
 .lg-para {
   margin: 0 0 1rem;
-  text-align: justify;
+  max-width: 72ch;
+  /* left-aligned: justified monospace opens rivers on narrow screens */
+  text-align: left;
 }
 .lg-para:last-child { margin-bottom: 0; }
 

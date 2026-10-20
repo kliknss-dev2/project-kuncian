@@ -48,6 +48,47 @@ html.dark body {
   color: var(--ink);
 }
 
+/* Browser surfaces: focus ring, caret, scrollbar */
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  html.dark :focus-visible {
+    outline-color: var(--yellow);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--ink);
+  }
+
+  html.dark input,
+  html.dark textarea {
+    caret-color: var(--yellow);
+  }
+
+  html {
+    scrollbar-color: rgba(34, 34, 34, 0.45) transparent;
+  }
+
+  html.dark {
+    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer components {
   .saw-card {
     border: 2px solid var(--ink);
@@ -73,6 +114,40 @@ html.dark body {
   .saw-button:hover {
     transform: translate(2px, 2px);
     box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  /* "← Kembali" link shared by every tool page */
+  .saw-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--ink);
+    text-decoration: none;
+    background: #ffffff;
+    border: 2px solid var(--ink);
+    border-radius: 9px;
+    padding: 0.32em 0.8em;
+    box-shadow: 3px 3px 0 var(--ink);
+    cursor: pointer;
+    transition: transform 130ms ease, box-shadow 130ms ease;
+  }
+
+  .saw-back-btn:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+
+  html.dark .saw-back-btn {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #020617;
+    box-shadow: 3px 3px 0 #020617;
+  }
+
+  html.dark .saw-back-btn:hover {
+    box-shadow: 1px 1px 0 #020617;
   }
 
   .saw-input {

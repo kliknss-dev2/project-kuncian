@@ -1,0 +1,549 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T09:19:10+00:00",
+  "title": "Design System: kotak.lo",
+  "extensions": {
+    "colorMeta": {
+      "kuning-stabilo": {
+        "role": "primary",
+        "displayName": "Kuning Stabilo",
+        "canonical": "#f6bd4f",
+        "tonalRamp": [
+          "oklch(15% 0.140 80.9)",
+          "oklch(26% 0.140 80.9)",
+          "oklch(38% 0.140 80.9)",
+          "oklch(49% 0.140 80.9)",
+          "oklch(61% 0.140 80.9)",
+          "oklch(72% 0.140 80.9)",
+          "oklch(84% 0.140 80.9)",
+          "oklch(95% 0.140 80.9)"
+        ]
+      },
+      "biru-postit": {
+        "role": "secondary",
+        "displayName": "Biru Post-it",
+        "canonical": "#9bd7e5",
+        "tonalRamp": [
+          "oklch(15% 0.064 213.8)",
+          "oklch(26% 0.064 213.8)",
+          "oklch(38% 0.064 213.8)",
+          "oklch(49% 0.064 213.8)",
+          "oklch(61% 0.064 213.8)",
+          "oklch(72% 0.064 213.8)",
+          "oklch(84% 0.064 213.8)",
+          "oklch(95% 0.064 213.8)"
+        ]
+      },
+      "pink-penghapus": {
+        "role": "secondary",
+        "displayName": "Pink Penghapus",
+        "canonical": "#f5a6b4",
+        "tonalRamp": [
+          "oklch(15% 0.095 7.8)",
+          "oklch(26% 0.095 7.8)",
+          "oklch(38% 0.095 7.8)",
+          "oklch(49% 0.095 7.8)",
+          "oklch(61% 0.095 7.8)",
+          "oklch(72% 0.095 7.8)",
+          "oklch(84% 0.095 7.8)",
+          "oklch(95% 0.095 7.8)"
+        ]
+      },
+      "ungu-krayon": {
+        "role": "tertiary",
+        "displayName": "Ungu Krayon",
+        "canonical": "#c9b6ea",
+        "tonalRamp": [
+          "oklch(15% 0.075 301.4)",
+          "oklch(26% 0.075 301.4)",
+          "oklch(38% 0.075 301.4)",
+          "oklch(49% 0.075 301.4)",
+          "oklch(61% 0.075 301.4)",
+          "oklch(72% 0.075 301.4)",
+          "oklch(84% 0.075 301.4)",
+          "oklch(95% 0.075 301.4)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#222222",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(38% 0.000 89.9)",
+          "oklch(49% 0.000 89.9)",
+          "oklch(61% 0.000 89.9)",
+          "oklch(72% 0.000 89.9)",
+          "oklch(84% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "ink-deep": {
+        "role": "neutral",
+        "displayName": "Tinta Pekat",
+        "canonical": "#111111",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(38% 0.000 89.9)",
+          "oklch(49% 0.000 89.9)",
+          "oklch(61% 0.000 89.9)",
+          "oklch(72% 0.000 89.9)",
+          "oklch(84% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Kertas",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(38% 0.000 89.9)",
+          "oklch(49% 0.000 89.9)",
+          "oklch(61% 0.000 89.9)",
+          "oklch(72% 0.000 89.9)",
+          "oklch(84% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Krem",
+        "canonical": "#fffaf0",
+        "tonalRamp": [
+          "oklch(15% 0.014 84.6)",
+          "oklch(26% 0.014 84.6)",
+          "oklch(38% 0.014 84.6)",
+          "oklch(49% 0.014 84.6)",
+          "oklch(61% 0.014 84.6)",
+          "oklch(72% 0.014 84.6)",
+          "oklch(84% 0.014 84.6)",
+          "oklch(95% 0.014 84.6)"
+        ]
+      },
+      "mint": {
+        "role": "neutral",
+        "displayName": "Mint",
+        "canonical": "#eef8f5",
+        "tonalRamp": [
+          "oklch(15% 0.011 176.3)",
+          "oklch(26% 0.011 176.3)",
+          "oklch(38% 0.011 176.3)",
+          "oklch(49% 0.011 176.3)",
+          "oklch(61% 0.011 176.3)",
+          "oklch(72% 0.011 176.3)",
+          "oklch(84% 0.011 176.3)",
+          "oklch(95% 0.011 176.3)"
+        ]
+      },
+      "highlight": {
+        "role": "neutral",
+        "displayName": "Sorot",
+        "canonical": "#fff3c4",
+        "tonalRamp": [
+          "oklch(15% 0.062 95.4)",
+          "oklch(26% 0.062 95.4)",
+          "oklch(38% 0.062 95.4)",
+          "oklch(49% 0.062 95.4)",
+          "oklch(61% 0.062 95.4)",
+          "oklch(72% 0.062 95.4)",
+          "oklch(84% 0.062 95.4)",
+          "oklch(95% 0.062 95.4)"
+        ]
+      },
+      "muted-text": {
+        "role": "neutral",
+        "displayName": "Teks Redup",
+        "canonical": "#555555",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(38% 0.000 89.9)",
+          "oklch(49% 0.000 89.9)",
+          "oklch(61% 0.000 89.9)",
+          "oklch(72% 0.000 89.9)",
+          "oklch(84% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "slate-night": {
+        "role": "neutral",
+        "displayName": "Slate Malam (dark bg)",
+        "canonical": "#0f172a",
+        "tonalRamp": [
+          "oklch(15% 0.040 265.8)",
+          "oklch(26% 0.040 265.8)",
+          "oklch(38% 0.040 265.8)",
+          "oklch(49% 0.040 265.8)",
+          "oklch(61% 0.040 265.8)",
+          "oklch(72% 0.040 265.8)",
+          "oklch(84% 0.040 265.8)",
+          "oklch(95% 0.040 265.8)"
+        ]
+      },
+      "slate-surface": {
+        "role": "neutral",
+        "displayName": "Slate Permukaan (dark card)",
+        "canonical": "#1e293b",
+        "tonalRamp": [
+          "oklch(15% 0.037 260.0)",
+          "oklch(26% 0.037 260.0)",
+          "oklch(38% 0.037 260.0)",
+          "oklch(49% 0.037 260.0)",
+          "oklch(61% 0.037 260.0)",
+          "oklch(72% 0.037 260.0)",
+          "oklch(84% 0.037 260.0)",
+          "oklch(95% 0.037 260.0)"
+        ]
+      },
+      "slate-abyss": {
+        "role": "neutral",
+        "displayName": "Slate Pekat (dark outline)",
+        "canonical": "#020617",
+        "tonalRamp": [
+          "oklch(15% 0.041 264.7)",
+          "oklch(26% 0.041 264.7)",
+          "oklch(38% 0.041 264.7)",
+          "oklch(49% 0.041 264.7)",
+          "oklch(61% 0.041 264.7)",
+          "oklch(72% 0.041 264.7)",
+          "oklch(84% 0.041 264.7)",
+          "oklch(95% 0.041 264.7)"
+        ]
+      },
+      "slate-text": {
+        "role": "neutral",
+        "displayName": "Teks Terang (dark)",
+        "canonical": "#f8fafc",
+        "tonalRamp": [
+          "oklch(15% 0.003 247.9)",
+          "oklch(26% 0.003 247.9)",
+          "oklch(38% 0.003 247.9)",
+          "oklch(49% 0.003 247.9)",
+          "oklch(61% 0.003 247.9)",
+          "oklch(72% 0.003 247.9)",
+          "oklch(84% 0.003 247.9)",
+          "oklch(95% 0.003 247.9)"
+        ]
+      },
+      "slate-muted": {
+        "role": "neutral",
+        "displayName": "Teks Redup (dark)",
+        "canonical": "#94a3b8",
+        "tonalRamp": [
+          "oklch(15% 0.035 256.8)",
+          "oklch(26% 0.035 256.8)",
+          "oklch(38% 0.035 256.8)",
+          "oklch(49% 0.035 256.8)",
+          "oklch(61% 0.035 256.8)",
+          "oklch(72% 0.035 256.8)",
+          "oklch(84% 0.035 256.8)",
+          "oklch(95% 0.035 256.8)"
+        ]
+      },
+      "success": {
+        "role": "status",
+        "displayName": "Hijau Valid",
+        "canonical": "#10b981",
+        "tonalRamp": [
+          "oklch(15% 0.149 162.5)",
+          "oklch(26% 0.149 162.5)",
+          "oklch(38% 0.149 162.5)",
+          "oklch(49% 0.149 162.5)",
+          "oklch(61% 0.149 162.5)",
+          "oklch(72% 0.149 162.5)",
+          "oklch(84% 0.149 162.5)",
+          "oklch(95% 0.149 162.5)"
+        ]
+      },
+      "success-soft": {
+        "role": "status",
+        "displayName": "Hijau Valid Lembut",
+        "canonical": "#d1fae5",
+        "tonalRamp": [
+          "oklch(15% 0.051 163.1)",
+          "oklch(26% 0.051 163.1)",
+          "oklch(38% 0.051 163.1)",
+          "oklch(49% 0.051 163.1)",
+          "oklch(61% 0.051 163.1)",
+          "oklch(72% 0.051 163.1)",
+          "oklch(84% 0.051 163.1)",
+          "oklch(95% 0.051 163.1)"
+        ]
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Merah Bahaya",
+        "canonical": "#b91c1c",
+        "tonalRamp": [
+          "oklch(15% 0.190 27.5)",
+          "oklch(26% 0.190 27.5)",
+          "oklch(38% 0.190 27.5)",
+          "oklch(49% 0.190 27.5)",
+          "oklch(61% 0.190 27.5)",
+          "oklch(72% 0.190 27.5)",
+          "oklch(84% 0.190 27.5)",
+          "oklch(95% 0.190 27.5)"
+        ]
+      },
+      "danger-soft": {
+        "role": "status",
+        "displayName": "Merah Bahaya Lembut",
+        "canonical": "#fee2e2",
+        "tonalRamp": [
+          "oklch(15% 0.031 17.7)",
+          "oklch(26% 0.031 17.7)",
+          "oklch(38% 0.031 17.7)",
+          "oklch(49% 0.031 17.7)",
+          "oklch(61% 0.031 17.7)",
+          "oklch(72% 0.031 17.7)",
+          "oklch(84% 0.031 17.7)",
+          "oklch(95% 0.031 17.7)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Wordmarks only (kuncian.lo, kotak.lo)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "One hero line per page."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Tool names on hub cards and tool headers."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Descriptions and subtitles; never below weight 600."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Inputs, search, stats, pressable buttons, code."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase tags, panel headers, stat labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "lifted",
+        "value": "8px 8px 0 #222222",
+        "purpose": "Main cards, hub app cards, .saw-card frames."
+      },
+      {
+        "name": "panel",
+        "value": "7px 7px 0 #222222",
+        "purpose": "JSON editor panels."
+      },
+      {
+        "name": "raised",
+        "value": "5px 5px 0 #222222",
+        "purpose": "Topic cards and pressable buttons (buttons use 6px)."
+      },
+      {
+        "name": "resting",
+        "value": "4px 4px 0 #222222",
+        "purpose": "Inputs, emoji tiles, compare bar."
+      },
+      {
+        "name": "low",
+        "value": "3px 3px 0 #222222",
+        "purpose": "Small buttons, active tabs, pill toggles."
+      },
+      {
+        "name": "pressed",
+        "value": "1px 1px 0 #222222",
+        "purpose": "Hover/press end state; translate by the shrink amount."
+      },
+      {
+        "name": "lifted-dark",
+        "value": "8px 8px 0 #020617",
+        "purpose": "Dark-mode lifted (Kuncian uses #000)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press",
+        "value": "160ms ease",
+        "purpose": "Card and button press: transform + box-shadow."
+      },
+      {
+        "name": "press-fast",
+        "value": "110-130ms ease",
+        "purpose": "Small buttons, tabs, toggles."
+      },
+      {
+        "name": "wash",
+        "value": "200ms ease",
+        "purpose": "Accent tint fade on hub card hover."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "hub-single",
+        "value": "480px"
+      },
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1536px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Pressable Button",
+      "kind": "button",
+      "refersTo": "button-pressable",
+      "description": "Primary/forward action in a pastel fill that sinks into its solid shadow when pressed.",
+      "html": "<button class=\"ds-btn-press\">Lihat dokumen</button>",
+      "css": ":host, .ds-root { --ink:#222222; --paper:#ffffff; --yellow:#f6bd4f; --sky:#9bd7e5; --pink:#f5a6b4; --lavender:#c9b6ea; --mint:#eef8f5; } .ds-btn-press { background:#f5a6b4; color:#111; font-family:'Space Mono','Courier New',monospace; font-size:0.875rem; font-weight:700; padding:12px 20px; border:2px solid #222; border-radius:10px; box-shadow:6px 6px 0 #222; cursor:pointer; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease; } .ds-btn-press:hover { transform:translate(3px,3px); box-shadow:3px 3px 0 #222; } .ds-btn-press:active { transform:translate(5px,5px); box-shadow:1px 1px 0 #222; } .ds-btn-press:focus-visible { outline:3px solid #222; outline-offset:3px; }"
+    },
+    {
+      "name": "Previous Button",
+      "kind": "button",
+      "refersTo": "button-pressable-blue",
+      "description": "Back/previous counterpart of the pressable button in Biru Post-it.",
+      "html": "<button class=\"ds-btn-prev\">Prev</button>",
+      "css": ".ds-btn-prev { background:#9bd7e5; color:#111; font-family:'Space Mono','Courier New',monospace; font-size:0.875rem; font-weight:700; padding:8px 16px; border:2px solid #222; border-radius:10px; box-shadow:6px 6px 0 #222; cursor:pointer; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease; } .ds-btn-prev:hover { transform:translate(3px,3px); box-shadow:3px 3px 0 #222; } .ds-btn-prev:focus-visible { outline:3px solid #222; outline-offset:3px; }"
+    },
+    {
+      "name": "Small Back Button",
+      "kind": "button",
+      "refersTo": "button-small",
+      "description": "White '← Kembali' link and small panel actions.",
+      "html": "<a class=\"ds-btn-back\" href=\"#\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M19 12H5M12 5l-7 7 7 7\"/></svg>Kembali</a>",
+      "css": ".ds-btn-back { display:inline-flex; align-items:center; gap:0.4rem; font-family:Nunito,'Trebuchet MS',sans-serif; font-size:0.82rem; font-weight:800; color:#222; text-decoration:none; background:#fff; border:2px solid #222; border-radius:9px; padding:0.32em 0.8em; box-shadow:3px 3px 0 #222; transition:transform 130ms ease, box-shadow 130ms ease; } .ds-btn-back:hover { transform:translate(2px,2px); box-shadow:1px 1px 0 #222; } .ds-btn-back:focus-visible { outline:3px solid #222; outline-offset:3px; }"
+    },
+    {
+      "name": "Pill Toggle",
+      "kind": "button",
+      "refersTo": "button-pill-toggle",
+      "description": "Dark-mode toggle in the hub topbar.",
+      "html": "<button class=\"ds-pill-toggle\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#f6bd4f\" stroke-width=\"2.5\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>Mode Gelap</button>",
+      "css": ".ds-pill-toggle { display:inline-flex; align-items:center; gap:0.45rem; font-family:Nunito,sans-serif; font-size:0.8rem; font-weight:800; padding:0.4em 0.9em; border:2px solid #222; border-radius:999px; background:#fff; color:#222; cursor:pointer; box-shadow:3px 3px 0 #222; transition:transform 130ms ease, box-shadow 130ms ease; } .ds-pill-toggle:hover { transform:translate(2px,2px); box-shadow:1px 1px 0 #222; } .ds-pill-toggle:focus-visible { outline:3px solid #222; outline-offset:3px; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Mono search field; focus floods the fill with Sorot yellow instead of a ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Contoh: cuti, absensi...\" />",
+      "css": ".ds-input { width:100%; font-family:'Space Mono','Courier New',monospace; font-size:0.875rem; font-weight:700; color:#222; background:#fff; border:2px solid #222; border-radius:14px; padding:12px 16px; box-shadow:4px 4px 0 #222; outline:none; transition:background 150ms ease; } .ds-input::placeholder { color:#94a3b8; } .ds-input:focus, .ds-input:focus-visible { background:#fff3c4; }"
+    },
+    {
+      "name": "Tag Chip",
+      "kind": "chip",
+      "refersTo": "chip-tag",
+      "description": "Ink pill naming a tool's category on hub cards.",
+      "html": "<span class=\"ds-chip\">Belajar</span>",
+      "css": ".ds-chip { display:inline-block; font-family:Nunito,sans-serif; font-size:0.72rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; background:#222; color:#fff; padding:0.3em 0.7em; border-radius:999px; }"
+    },
+    {
+      "name": "Status Badges",
+      "kind": "chip",
+      "refersTo": "badge-new",
+      "description": "Tiny New / Update badges on Kuncian topic cards.",
+      "html": "<span class=\"ds-badge ds-badge-new\">New</span> <span class=\"ds-badge ds-badge-upd\">Update</span>",
+      "css": ".ds-badge { display:inline-block; font-family:Nunito,sans-serif; font-size:9px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; line-height:1; color:#111; padding:2px 6px; border:1px solid #222; border-radius:4px; } .ds-badge-new { background:#f5a6b4; } .ds-badge-upd { background:#9bd7e5; }"
+    },
+    {
+      "name": "Topic Card",
+      "kind": "card",
+      "refersTo": "card-topic",
+      "description": "Clickable Kuncian topic; presses in and picks up a yellow wash on hover.",
+      "html": "<button class=\"ds-topic-card\"><span class=\"ds-badge-mini\">New</span><strong>SOP Absensi</strong><small>12 gambar · 1 dokumen</small></button>",
+      "css": ".ds-topic-card { display:flex; flex-direction:column; align-items:flex-start; gap:0.4rem; width:240px; text-align:left; font-family:Nunito,sans-serif; color:#111; background:#fff; border:2px solid #222; border-radius:16px; padding:1rem 1.1rem; box-shadow:5px 5px 0 #222; cursor:pointer; transition:transform 150ms ease, box-shadow 150ms ease, background 150ms ease; } .ds-topic-card strong { font-size:1.05rem; font-weight:900; } .ds-topic-card small { font-family:'Space Mono',monospace; font-size:0.75rem; color:#555; } .ds-badge-mini { font-size:9px; font-weight:700; text-transform:uppercase; background:#f5a6b4; border:1px solid #222; border-radius:4px; padding:2px 6px; } .ds-topic-card:hover { transform:translate(2px,2px); box-shadow:3px 3px 0 #222; background:rgba(246,189,79,0.12); } .ds-topic-card:focus-visible { outline:3px solid #222; outline-offset:3px; }"
+    },
+    {
+      "name": "Hub App Card",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Signature hub tile per tool, tinted with that tool's pastel.",
+      "html": "<a class=\"ds-app-card\" href=\"#\"><div class=\"ds-app-top\"><span class=\"ds-app-emoji\">🗝️</span><span class=\"ds-app-tag\">Belajar</span></div><h3>Kuncian.lo</h3><p>Viewer simpel &amp; modern untuk daftar kunci jawaban per topik.</p><span class=\"ds-app-cta\">Buka aplikasi →</span></a>",
+      "css": ".ds-app-card { display:flex; flex-direction:column; gap:0.5rem; width:320px; text-decoration:none; color:#222; font-family:Nunito,sans-serif; background:rgba(246,189,79,0.18); border:2.5px solid #222; border-radius:20px; box-shadow:8px 8px 0 #222; padding:1.5rem 1.5rem 1.25rem; transition:transform 160ms ease, box-shadow 160ms ease; } .ds-app-card:hover { transform:translate(3px,3px); box-shadow:4px 4px 0 #222; } .ds-app-card:focus-visible { outline:3px solid #222; outline-offset:4px; } .ds-app-top { display:flex; justify-content:space-between; align-items:center; } .ds-app-emoji { width:52px; height:52px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; background:#fff; border:2px solid #222; border-radius:14px; box-shadow:4px 4px 0 #222; } .ds-app-tag { font-size:0.72rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; background:#222; color:#fff; padding:0.3em 0.7em; border-radius:999px; } .ds-app-card h3 { margin:0; font-size:1.35rem; font-weight:900; line-height:1.2; } .ds-app-card p { margin:0; font-size:0.88rem; font-weight:600; color:#444; line-height:1.5; } .ds-app-cta { align-self:flex-start; margin-top:0.75rem; font-size:0.85rem; font-weight:800; background:#fff; border:2px solid #222; border-radius:9px; padding:0.4em 0.9em; box-shadow:3px 3px 0 #222; transition:transform 160ms ease, box-shadow 160ms ease; } .ds-app-card:hover .ds-app-cta { transform:translate(1px,1px); box-shadow:1px 1px 0 #222; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Kotak Mainan Kantor",
+    "overview": "kotak.lo is an office toy box: work tools that look and behave like toys. Every surface is a chunky object outlined in thick ink, filled with flat stationery pastels, and set on warm cream paper sprinkled with a faint dot grid. Things that can be clicked sit on solid, unblurred shadows and physically sink into them when hovered or pressed. The interface should feel like pressing a real button.\n\nThe mood is cheerful and playful but never in the way. Emoji, slight rotations on ornaments and casual copy do the joking. Information still has to be readable at a glance, because the person is usually mid-task and on a phone. Layouts are light and roomy, with generous padding inside cards and clear gaps between them. Nothing is crammed.\n\nConfirmed rejections: blurred shadows and glassmorphism, gradients on buttons or cards, sharp (0px) corners, and saturated or neon colour.",
+    "keyCharacteristics": [
+      "Thick ink outlines (2–2.5px `#222`) on every object.",
+      "Solid offset shadows with zero blur that shrink as an element is pressed.",
+      "Four stationery pastels, one per tool, over cream paper.",
+      "Heavy, rounded Nunito (800–900) paired with Space Mono for inputs and data.",
+      "Rounded everything, from 7px buttons to pill toggles.",
+      "Full dark mode in slate, keeping the same outline-and-shadow grammar."
+    ],
+    "rules": [
+      {
+        "name": "The One Tool, One Pastel Rule",
+        "body": "Each tool owns one accent: Kuncian takes Kuning Stabilo, JSON Formatter takes Biru Post-it and Lorem Ipsum takes Ungu Krayon. A tool's emoji tile and hub card tint (18–22% alpha) use its accent. A new tool claims the free pastel (Pink Penghapus) or a new soft pastel of similar lightness. It never gets a saturated colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Is Structure Rule",
+        "body": "Ink (`#222`) is for outlines, shadows and text, never for large fills. The only dark fills allowed are the small chip-tag and the dark-mode surfaces.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never-Thin Rule",
+        "body": "No text below weight 600. The thinnest stroke in the system is body copy at 600, and anything structural is 800–900.",
+        "section": "typography"
+      },
+      {
+        "name": "The Phone-First Lookup Rule",
+        "body": "Primary search and the topic grid must be usable one-handed at 375px. Desktop-only chrome (the sidebar, the inline viewer controls) is an addition, never the only path.",
+        "section": "layout"
+      },
+      {
+        "name": "The Shadow Means Clickable Rule",
+        "body": "A solid offset shadow is a promise that the element responds to touch. Static containers that aren't interactive (stat tiles, the sidebar) may carry one only as the large \"Lifted\" frame. Every interactive element must also have the pressed state.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Press Physics Rule",
+        "body": "On hover/press, translate by (start offset − end offset) on both axes over 110–160ms `ease`, so the element lands exactly where its shadow was.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** outline every object in 2px `#222` ink, or 2.5px on the largest cards.",
+      "**Do** use solid zero-blur offset shadows (8 / 5 / 3px) on interactive elements, and press them on hover by translating exactly as far as the shadow shrinks.",
+      "**Do** give each tool one stationery pastel and reuse it for its emoji tile and hub card tint.",
+      "**Do** set headings in Nunito 900 and anything typed or counted in Space Mono.",
+      "**Do** add a `dark:` / `html.dark` variant for every coloured surface, border and shadow (slate surfaces, near-black outlines).",
+      "**Do** keep copy casual Indonesian with emoji where it fits the voice."
+    ],
+    "donts": [
+      "**Don't** use blurred shadows, glows or glassmorphism / backdrop blur.",
+      "**Don't** put gradients on buttons, cards or inputs. Gradients belong only to the page background washes.",
+      "**Don't** use sharp 0px corners. The smallest radius is 4px (status badges).",
+      "**Don't** introduce saturated or neon colours. New accents must match the existing pastels in lightness (≈ oklch 80–85%).",
+      "**Don't** set text thinner than weight 600.",
+      "**Don't** use ink as a large fill colour."
+    ]
+  }
+}

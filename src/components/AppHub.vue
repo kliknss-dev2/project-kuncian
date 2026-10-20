@@ -5,12 +5,11 @@ const isDark = ref(false);
 
 function toggleDark() {
   isDark.value = !isDark.value;
-  if (isDark.value) {
-    document.documentElement.classList.add('dark');
-    localStorage.setItem('kotak_theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('kotak_theme', 'light');
+  document.documentElement.classList.toggle('dark', isDark.value);
+  try {
+    localStorage.setItem('kotak_theme', isDark.value ? 'dark' : 'light');
+  } catch {
+    // Storage blocked: the theme still applies for this visit, it just won't persist
   }
 }
 
@@ -60,7 +59,8 @@ const apps = [
       <button
         id="hub-dark-toggle"
         class="hub-dark-btn"
-        :aria-label="isDark ? 'Mode Terang' : 'Mode Gelap'"
+        type="button"
+        :aria-label="isDark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'"
         @click="toggleDark"
       >
         <!-- Moon icon (light mode → switch to dark) -->
