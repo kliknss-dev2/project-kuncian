@@ -39,6 +39,7 @@ const compareTabBId = ref(null);
 
 // UI feedback
 const copySuccess = ref(false);
+const storageFailed = ref(false);
 
 // ── Error position + gutter ────────────────────────────────
 const textareaEl = ref(null);
@@ -336,7 +337,30 @@ function saveToStorage() {
       activeTabId: activeTabId.value,
       nextId: nextId.value,
     }));
-  } catch {}
+    storageFailed.value = false;
+  } catch {
+    // Quota penuh (JSON besar) atau storage diblokir — kasih tahu, jangan diam-diam hilang
+    storageFailed.value = true;
+  }
+}
+
+// Data lama/rusak di localStorage tidak boleh bikin editor crash
+function sanitizeStoredTab(t) {
+  if (!t || !Number.isFinite(t.id)) return null;
+  return {
+    id: t.id,
+    name: typeof t.name === 'string' && t.name.trim() ? t.name.slice(0, 40) : `JSON ${t.id}`,
+    input: typeof t.input === 'string' ? t.input : '',
+    indentSize: [2, 4, '\t'].includes(t.indentSize) ? t.indentSize : 2,
+  };
+}
+
+function focusSiblingTab(id, direction) {
+  const idx = tabs.value.findIndex(t => t.id === id);
+  const next = tabs.value[(idx + direction + tabs.value.length) % tabs.value.length];
+  if (!next) return;
+  switchTab(next.id);
+  nextTick(() => document.querySelector('.jf-tab-active')?.focus());
 }
 
 function loadFromStorage() {
@@ -344,12 +368,29 @@ function loadFromStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const data = JSON.parse(raw);
-    if (Array.isArray(data.tabs) && data.tabs.length > 0) {
-      tabs.value        = data.tabs;
-      activeTabId.value = data.activeTabId ?? data.tabs[0].id;
-      nextId.value      = data.nextId ?? (Math.max(...data.tabs.map(t => t.id)) + 1);
+    const storedTabs = Array.isArray(data?.tabs)
+      ? data.tabs.map(sanitizeStoredTab).filter(Boolean).slice(0, MAX_TABS)
+      : [];
+    if (storedTabs.length > 0) {
+      const maxId = Math.max(...storedTabs.map(t => t.id));
+      tabs.value        = storedTabs;
+      activeTabId.value = storedTabs.some(t => t.id === data.activeTabId) ? data.activeTabId : storedTabs[0].id;
+      nextId.value      = Number.isFinite(data.nextId) && data.nextId > maxId ? data.nextId : maxId + 1;
     }
   } catch {}
+}
+
+function handleTabKeydown(event, id) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    switchTab(id);
+  } else if (event.key === 'F2') {
+    event.preventDefault();
+    startRename(id, event);
+  } else if (event.key === 'Delete' && tabs.value.length > 1) {
+    event.preventDefault();
+    removeTab(id);
+  }
 }
 
 onMounted(loadFromStorage);
@@ -362,7 +403,7 @@ watch(activeTabId, saveToStorage);
 
     <!-- ── Topbar ── -->
     <div class="jf-topbar">
-      <a href="/" class="jf-back-btn">
+      <a href="/" class="saw-back-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5M12 5l-7 7 7 7"/>
         </svg>
@@ -377,6 +418,9 @@ watch(activeTabId, saveToStorage);
         <h1 class="jf-title">JSON Formatter</h1>
         <p class="jf-subtitle">Format · Minify · Validasi · Bandingkan antar Tab</p>
       </div>
+      <p v-if="storageFailed" class="jf-storage-warn" role="status">
+        Penyimpanan browser penuh — perubahan terakhir belum tersimpan. Hapus tab yang besar dulu.
+      </p>
     </header>
 
     <!-- ── Tab Bar + Compare Toggle ── -->
@@ -389,7 +433,12 @@ watch(activeTabId, saveToStorage);
           :class="{ 'jf-tab-active': tab.id === activeTabId }"
           role="tab"
           :aria-selected="tab.id === activeTabId"
+          :tabindex="tab.id === activeTabId ? 0 : -1"
+          :title="`${tab.name} — klik dua kali atau F2 untuk ganti nama`"
           @click="switchTab(tab.id)"
+          @keydown.self="handleTabKeydown($event, tab.id)"
+          @keydown.self.left.prevent="focusSiblingTab(tab.id, -1)"
+          @keydown.self.right.prevent="focusSiblingTab(tab.id, 1)"
         >
           <span class="jf-tab-dot" :class="tabDotClass(tab)"></span>
           <!-- Rename input or display name -->
@@ -409,16 +458,20 @@ watch(activeTabId, saveToStorage);
           <button
             v-if="tabs.length > 1"
             class="jf-tab-close"
+            type="button"
+            tabindex="-1"
             @click.stop="removeTab(tab.id)"
-            aria-label="Tutup tab"
+            :aria-label="`Tutup tab ${tab.name}`"
           >×</button>
         </div>
         <!-- Add Tab -->
         <button
+          type="button"
           class="jf-add-tab"
           @click="addTab"
           :disabled="tabs.length >= MAX_TABS"
           :title="tabs.length >= MAX_TABS ? 'Maksimal 8 tab' : 'Tambah tab baru'"
+          :aria-label="tabs.length >= MAX_TABS ? 'Maksimal 8 tab' : 'Tambah tab baru'"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -429,10 +482,12 @@ watch(activeTabId, saveToStorage);
       <!-- Compare toggle -->
       <button
         class="jf-compare-btn"
+        type="button"
         :class="{ active: compareMode }"
+        :aria-pressed="compareMode"
         @click="toggleCompare"
         :disabled="tabs.length < 2"
-        title="Bandingkan dua tab"
+        :title="tabs.length < 2 ? 'Butuh minimal 2 tab untuk membandingkan' : 'Bandingkan dua tab'"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="8 9 3 12 8 15"/><polyline points="16 9 21 12 16 15"/>
@@ -646,32 +701,37 @@ watch(activeTabId, saveToStorage);
 }
 
 /* ── Topbar ───────────────────────────────────────────────── */
-.jf-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: var(--ink);
-  text-decoration: none;
-  background: white;
-  border: 2px solid var(--ink);
-  border-radius: 9px;
-  padding: 0.32em 0.8em;
-  box-shadow: 3px 3px 0 var(--ink);
-  transition: transform 130ms ease, box-shadow 130ms ease;
-}
-.jf-back-btn:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
-}
 
 /* ── Header ───────────────────────────────────────────────── */
 .jf-header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.9rem;
   flex-shrink: 0;
+}
+.jf-storage-warn {
+  margin: 0 0 0 auto;
+  max-width: 360px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #92400e;
+  background: #fff3c4;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+html.dark .jf-storage-warn {
+  color: #fcd34d;
+  background: #1e293b;
+  border-color: #020617;
+  box-shadow: 3px 3px 0 #020617;
+}
+/* The tab list scrolls horizontally, which clips outer outlines */
+.jf-tab:focus-visible {
+  outline-offset: -4px;
 }
 .jf-emoji-wrap {
   width: 50px;
@@ -946,6 +1006,8 @@ html.dark .jf-cm-editor :deep(.cm-gutters) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* keeps headers with and without action buttons the same height */
+  min-height: 47px;
   padding: 0.55rem 0.9rem;
   border-bottom: 2px solid var(--ink);
   background: #f8f8f5;
@@ -1251,37 +1313,35 @@ html.dark .jf-cm-editor :deep(.cm-gutters) {
 }
 
 /* ── Dark Mode Overrides ──────────────────────────────────── */
-html.dark .jf-panel          { background: #0f172a; border-color: #000; box-shadow: 7px 7px 0 #000; }
-html.dark .jf-panel-header   { background: #1e293b; border-bottom-color: #000; }
+html.dark .jf-panel          { background: #0f172a; border-color: #020617; box-shadow: 7px 7px 0 #020617; }
+html.dark .jf-panel-header   { background: #1e293b; border-bottom-color: #020617; }
 html.dark .jf-panel-label    { color: #94a3b8; }
 html.dark .jf-textarea       { background: #0f172a; color: #f1f5f9; }
 html.dark .jf-pre            { color: #f1f5f9; }
 html.dark .jf-tab-active     { background: #1e293b; color: #f1f5f9; border-bottom-color: #1e293b; }
-html.dark .jf-action-btn     { background: #1e293b; color: #f1f5f9; border-color: #000; box-shadow: 2px 2px 0 #000; }
-html.dark .jf-action-btn:hover:not(:disabled) { box-shadow: 1px 1px 0 #000; }
-html.dark .jf-out-tab.active { background: #1e293b; color: #f1f5f9; border-color: #000; box-shadow: 2px 2px 0 #000; }
-html.dark .jf-select         { background: #1e293b; color: #f1f5f9; border-color: #000; box-shadow: 3px 3px 0 #000; }
-html.dark .jf-main-btn       { border-color: #000; box-shadow: 4px 4px 0 #000; }
-html.dark .jf-main-btn:hover:not(:disabled) { box-shadow: 2px 2px 0 #000; }
+html.dark .jf-action-btn     { background: #1e293b; color: #f1f5f9; border-color: #020617; box-shadow: 2px 2px 0 #020617; }
+html.dark .jf-action-btn:hover:not(:disabled) { box-shadow: 1px 1px 0 #020617; }
+html.dark .jf-out-tab.active { background: #1e293b; color: #f1f5f9; border-color: #020617; box-shadow: 2px 2px 0 #020617; }
+html.dark .jf-select         { background: #1e293b; color: #f1f5f9; border-color: #020617; box-shadow: 3px 3px 0 #020617; }
+html.dark .jf-main-btn       { border-color: #020617; box-shadow: 4px 4px 0 #020617; }
+html.dark .jf-main-btn:hover:not(:disabled) { box-shadow: 2px 2px 0 #020617; }
 html.dark #jf-btn-clear      { background: #1e293b; color: #f1f5f9; }
 html.dark #jf-btn-paste      { background: #1e293b; color: #f1f5f9; }
-html.dark #jf-btn-format     { color: #000; } /* Yellow */
+html.dark #jf-btn-format     { color: #020617; } /* Yellow */
 html.dark #jf-btn-minify     { background: #1e293b; color: #f1f5f9; }
-html.dark #jf-btn-copy       { color: #000; } /* Purple/Green */
-html.dark .jf-add-tab        { background: #1e293b; color: #f1f5f9; border-color: #000; box-shadow: 2px 2px 0 #000; }
-html.dark .jf-add-tab:hover  { box-shadow: 1px 1px 0 #000; }
-html.dark .jf-back-btn       { background: #1e293b; color: #f1f5f9; border-color: #000; box-shadow: 3px 3px 0 #000; }
-html.dark .jf-back-btn:hover { box-shadow: 1px 1px 0 #000; }
-html.dark .jf-compare-btn    { background: #1e293b; color: #f1f5f9; border-color: #000; box-shadow: 3px 3px 0 #000; }
-html.dark .jf-compare-btn:hover { box-shadow: 1px 1px 0 #000; }
+html.dark #jf-btn-copy       { color: #020617; } /* Purple/Green */
+html.dark .jf-add-tab        { background: #1e293b; color: #f1f5f9; border-color: #020617; box-shadow: 2px 2px 0 #020617; }
+html.dark .jf-add-tab:hover  { box-shadow: 1px 1px 0 #020617; }
+html.dark .jf-compare-btn    { background: #1e293b; color: #f1f5f9; border-color: #020617; box-shadow: 3px 3px 0 #020617; }
+html.dark .jf-compare-btn:hover { box-shadow: 1px 1px 0 #020617; }
 html.dark .jf-tab-rename     { background: #0f172a; color: #f1f5f9; }
 html.dark .jf-subtitle       { color: #94a3b8; }
 html.dark .jf-ctrl-label     { color: #94a3b8; }
-html.dark .jf-compare-bar    { background: rgba(30,41,59,0.8); border-color: #000; box-shadow: 4px 4px 0 #000; }
-html.dark .jf-status-bar     { border-top-color: #000; }
+html.dark .jf-compare-bar    { background: rgba(30,41,59,0.8); border-color: #020617; box-shadow: 4px 4px 0 #020617; }
+html.dark .jf-status-bar     { border-top-color: #020617; }
 html.dark .jf-title          { color: #f8fafc; }
-html.dark .jf-badge          { border-color: #000; box-shadow: 2px 2px 0 #000; }
-html.dark .jf-line-gutter    { background: #1a2235; border-right-color: #000; }
+html.dark .jf-badge          { border-color: #020617; box-shadow: 2px 2px 0 #020617; }
+html.dark .jf-line-gutter    { background: #1a2235; border-right-color: #020617; }
 html.dark .jf-gutter-line    { color: #4b5563; }
 html.dark .jf-gutter-err     { background: rgba(239,68,68,0.18); color: #f87171; }
 html.dark .jf-tree-numbered :deep(.jt-row)::before {

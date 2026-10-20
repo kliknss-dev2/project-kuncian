@@ -22,8 +22,12 @@ const {
     <ViewTransitions />
     <!-- Anti-FOUC: apply saved theme BEFORE first paint -->
     <script is:inline>
+      // localStorage can throw when site data is blocked; fall back to the OS preference
+      function readTheme() {
+        try { return localStorage.getItem('kotak_theme'); } catch { return null; }
+      }
       (function () {
-        const saved = localStorage.getItem('kotak_theme');
+        const saved = readTheme();
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (saved === 'dark' || (!saved && prefersDark)) {
           document.documentElement.classList.add('dark');
@@ -31,7 +35,7 @@ const {
       })();
       // Re-apply dark mode after every View Transition swap
       document.addEventListener('astro:after-swap', () => {
-        const saved = localStorage.getItem('kotak_theme');
+        const saved = readTheme();
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (saved === 'dark' || (!saved && prefersDark)) {
           document.documentElement.classList.add('dark');
